@@ -27,6 +27,27 @@
         <activity
                 android:name=".MainActivity"
                 android:exported="false"/>
+        <activity
+                android:name=".AdminDashboardActivity"
+                android:exported="false"/>
+        <activity
+                android:name=".AdminUserManagementActivity"
+                android:exported="false"/>
+        <activity
+                android:name=".AdminBatchManagementActivity"
+                android:exported="false"/>
+        <activity
+                android:name=".AdminMentorAllocationActivity"
+                android:exported="false"/>
+        <activity
+                android:name=".AdminAnnouncementActivity"
+                android:exported="false"/>
+        <activity
+                android:name=".AdminAnalyticsActivity"
+                android:exported="false"/>
+        <activity
+                android:name=".AdminBulkUploadActivity"
+                android:exported="false"/>
     </application>
 
 </manifest>
