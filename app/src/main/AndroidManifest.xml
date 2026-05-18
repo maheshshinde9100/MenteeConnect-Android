@@ -48,6 +48,21 @@
         <activity
                 android:name=".admin.AdminBulkUploadActivity"
                 android:exported="false"/>
+        <activity
+                android:name=".mentor.MentorDashboardActivity"
+                android:exported="false"/>
+        <activity
+                android:name=".mentor.MenteeDetailActivity"
+                android:exported="false"/>
+        <activity
+                android:name=".mentor.MentorAttendanceActivity"
+                android:exported="false"/>
+        <activity
+                android:name=".mentor.MentorTaskActivity"
+                android:exported="false"/>
+        <activity
+                android:name=".mentor.MentorAnnouncementActivity"
+                android:exported="false"/>
     </application>
 
 </manifest>
