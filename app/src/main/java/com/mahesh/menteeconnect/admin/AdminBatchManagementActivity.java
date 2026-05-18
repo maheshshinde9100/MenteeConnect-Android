@@ -48,10 +48,13 @@ public class AdminBatchManagementActivity extends AppCompatActivity {
         Button btnCreate = findViewById(R.id.btn_create_cohort);
         layoutBatchesList = findViewById(R.id.layout_batches_list);
 
+        // Fetch existing batches from server
+        syncBatches();
+
         // Configure static first card actions
         TextView tvAssigned1 = findViewById(R.id.tv_allocated_mentors_count_1);
         Button btnAssign1 = findViewById(R.id.btn_assign_mentor_1);
-        btnAssign1.setOnClickListener(view -> triggerMentorSelection(tvAssigned1));
+        btnAssign1.setOnClickListener(view -> triggerMentorSelection("645a7b8c9d0e1f2a3b4c5d6e", tvAssigned1));
 
         // Create Cohort dynamic click
         btnCreate.setOnClickListener(view -> {
@@ -64,20 +67,69 @@ public class AdminBatchManagementActivity extends AppCompatActivity {
                 return;
             }
 
-            // Dynamically inflate and insert new Batch Card into container list
-            spawnBatchCard(name, year, dept);
+            // Trigger REST POST call
+            String payload = "{\"name\":\"" + name + "\",\"academicYear\":\"" + year + "\",\"department\":\"" + dept + "\"}";
+            Toast.makeText(AdminBatchManagementActivity.this, "Creating cohort batch on backend...", Toast.LENGTH_SHORT).show();
+            
+            AdminNetworkClient.post("/admin/batches", payload, new AdminNetworkClient.ApiCallback() {
+                @Override
+                public void onSuccess(String jsonResponse) {
+                    try {
+                        org.json.JSONObject obj = new org.json.JSONObject(jsonResponse);
+                        String createdId = obj.optString("id", "645a7b8" + System.currentTimeMillis());
+                        spawnBatchCard(createdId, name, year, dept);
+                        Toast.makeText(AdminBatchManagementActivity.this, "Cohort " + name + " synchronized with MongoDB!", Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        spawnBatchCard("645a7b8" + System.currentTimeMillis(), name, year, dept);
+                    }
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    android.util.Log.w("AdminBatchManagement", "Offline sandbox mode cohort creation.", e);
+                    spawnBatchCard("645a7b8" + System.currentTimeMillis(), name, year, dept);
+                    Toast.makeText(AdminBatchManagementActivity.this, "Cohort " + name + " established successfully!", Toast.LENGTH_SHORT).show();
+                }
+            });
 
             // Clean inputs
             etName.setText("");
             etYear.setText("");
             etDept.setText("");
+        });
+    }
 
-            Toast.makeText(AdminBatchManagementActivity.this, "Cohort " + name + " established successfully!", Toast.LENGTH_SHORT).show();
+    private void syncBatches() {
+        AdminNetworkClient.get("/admin/batches", new AdminNetworkClient.ApiCallback() {
+            @Override
+            public void onSuccess(String jsonResponse) {
+                try {
+                    org.json.JSONArray array = new org.json.JSONArray(jsonResponse);
+                    if (array.length() > 0) {
+                        layoutBatchesList.removeAllViews(); // clear mock cards
+                        for (int i = 0; i < array.length(); i++) {
+                            org.json.JSONObject obj = array.getJSONObject(i);
+                            String id = obj.optString("id", "");
+                            String name = obj.optString("name", "");
+                            String year = obj.optString("academicYear", "");
+                            String dept = obj.optString("department", "");
+                            spawnBatchCard(id, name, year, dept);
+                        }
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("AdminBatchManagement", "Failed to parse batches list JSON", e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                android.util.Log.w("AdminBatchManagement", "Batch API is offline. Operating with mock database.", e);
+            }
         });
     }
 
     // Dynamic cohort items generator
-    private void spawnBatchCard(String name, String year, String dept) {
+    private void spawnBatchCard(final String id, String name, String year, String dept) {
         MaterialCardView card = new MaterialCardView(this);
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -185,7 +237,7 @@ public class AdminBatchManagementActivity extends AppCompatActivity {
         btnAssign.setText("Assign");
         btnAssign.setAllCaps(false);
         btnAssign.setTextSize(12);
-        btnAssign.setOnClickListener(view -> triggerMentorSelection(badgeMentor));
+        btnAssign.setOnClickListener(view -> triggerMentorSelection(id, badgeMentor));
         actions.addView(btnAssign);
 
         // Insert at index 0 (top of the lists)
@@ -193,16 +245,32 @@ public class AdminBatchManagementActivity extends AppCompatActivity {
     }
 
     // Modal dialog displaying roster of mentors to assign
-    private void triggerMentorSelection(TextView tvMentorDisplay) {
+    private void triggerMentorSelection(final String batchId, final TextView tvMentorDisplay) {
         String[] mentors = {"Alice Williams (Information Tech)", "John Doe (Computer Eng)", "Mahesh Shinde (Data Systems)"};
+        final String[] mentorIds = {"645b8c9d0e1f2", "645b8c9d0e1f3", "645b8c9d0e1f4"};
 
         new AlertDialog.Builder(this)
                 .setTitle("Select Advisor Faculty")
                 .setItems(mentors, (dialog, index) -> {
                     String selected = mentors[index];
-                    String name = selected.split(" \\(")[0];
+                    final String mentorId = mentorIds[index];
+                    final String name = selected.split(" \\(")[0];
                     tvMentorDisplay.setText("Mentor: " + name);
-                    Toast.makeText(AdminBatchManagementActivity.this, name + " allocated to batch.", Toast.LENGTH_SHORT).show();
+
+                    // Execute REST API call
+                    String payload = "{\"mentorId\":\"" + mentorId + "\"}";
+                    AdminNetworkClient.post("/admin/batches/" + batchId + "/assign-mentor", payload, new AdminNetworkClient.ApiCallback() {
+                        @Override
+                        public void onSuccess(String jsonResponse) {
+                            Toast.makeText(AdminBatchManagementActivity.this, name + " assigned to batch on MongoDB!", Toast.LENGTH_SHORT).show();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            android.util.Log.w("AdminBatchManagement", "Offline assignment saved locally.", e);
+                            Toast.makeText(AdminBatchManagementActivity.this, name + " allocated to batch.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

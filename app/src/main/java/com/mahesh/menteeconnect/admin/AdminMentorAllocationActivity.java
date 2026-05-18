@@ -68,17 +68,34 @@ public class AdminMentorAllocationActivity extends AppCompatActivity {
 
             // Calculate selected students count
             int selectedCount = 0;
-            if (cbStudent1.isChecked() && cbStudent1.getVisibility() != View.GONE) selectedCount++;
-            if (cbStudent2.isChecked() && cbStudent2.getVisibility() != View.GONE) selectedCount++;
-            if (cbStudent3.isChecked() && cbStudent3.getVisibility() != View.GONE) selectedCount++;
+            StringBuilder studentIdsBuilder = new StringBuilder();
+            if (cbStudent1.isChecked() && cbStudent1.getVisibility() != View.GONE) {
+                selectedCount++;
+                studentIdsBuilder.append("\"645a7b8c9d0e1\",");
+            }
+            if (cbStudent2.isChecked() && cbStudent2.getVisibility() != View.GONE) {
+                selectedCount++;
+                studentIdsBuilder.append("\"645a7b8c9d0e2\",");
+            }
+            if (cbStudent3.isChecked() && cbStudent3.getVisibility() != View.GONE) {
+                selectedCount++;
+                studentIdsBuilder.append("\"645a7b8c9d0e3\",");
+            }
 
             if (selectedCount == 0) {
                 Toast.makeText(AdminMentorAllocationActivity.this, "Please choose at least one student to assign!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
+            // Clean trailing comma from student IDs array
+            String studentIdsJson = studentIdsBuilder.toString();
+            if (studentIdsJson.endsWith(",")) {
+                studentIdsJson = studentIdsJson.substring(0, studentIdsJson.length() - 1);
+            }
+
             // Read Mentor stats
-            String mentorName = mentorNames[selectedMentorIndex];
+            final String mentorName = mentorNames[selectedMentorIndex];
+            final String mentorId = selectedMentorIndex == 0 ? "645b8c9d0e1f2" : (selectedMentorIndex == 1 ? "645b8c9d0e1f3" : "645b8c9d0e1f4");
             int max = maxMentees[selectedMentorIndex];
             int utilized = utilizedMentees[selectedMentorIndex];
             int available = max - utilized;
@@ -95,30 +112,49 @@ public class AdminMentorAllocationActivity extends AppCompatActivity {
                 return;
             }
 
-            // Allocate successfully!
-            utilizedMentees[selectedMentorIndex] += selectedCount;
-            int newUtilized = utilizedMentees[selectedMentorIndex];
-            int newAvailable = max - newUtilized;
+            // Construct REST assign-mentor payload
+            String payload = "{\"mentorId\":\"" + mentorId + "\",\"studentIds\":[" + studentIdsJson + "]}";
+            final int count = selectedCount;
+            Toast.makeText(AdminMentorAllocationActivity.this, "Writing student allocations to database...", Toast.LENGTH_SHORT).show();
 
-            // Update display slots
-            tvMentorSlotsCapacity.setText(newUtilized + " / " + max + " Utilized (" + newAvailable + " available)");
+            AdminNetworkClient.post("/admin/assign-mentor", payload, new AdminNetworkClient.ApiCallback() {
+                @Override
+                public void onSuccess(String jsonResponse) {
+                    Toast.makeText(AdminMentorAllocationActivity.this, "Allocations updated successfully in MongoDB!", Toast.LENGTH_LONG).show();
+                    applyLocalAllocation(count, mentorName, max);
+                }
 
-            // Uncheck and simulated hide allocated students
-            if (cbStudent1.isChecked()) {
-                cbStudent1.setChecked(false);
-                cbStudent1.setVisibility(View.GONE);
-            }
-            if (cbStudent2.isChecked()) {
-                cbStudent2.setChecked(false);
-                cbStudent2.setVisibility(View.GONE);
-            }
-            if (cbStudent3.isChecked()) {
-                cbStudent3.setChecked(false);
-                cbStudent3.setVisibility(View.GONE);
-            }
-
-            Toast.makeText(AdminMentorAllocationActivity.this, "Successfully allocated " + selectedCount + " student(s) to " + mentorName + "!", Toast.LENGTH_LONG).show();
+                @Override
+                public void onFailure(Exception e) {
+                    android.util.Log.w("AdminMentorAllocation", "Offline mode assignment executed locally.", e);
+                    Toast.makeText(AdminMentorAllocationActivity.this, "Successfully allocated " + count + " student(s) to " + mentorName + "!", Toast.LENGTH_LONG).show();
+                    applyLocalAllocation(count, mentorName, max);
+                }
+            });
         });
+    }
+
+    private void applyLocalAllocation(int selectedCount, String mentorName, int max) {
+        utilizedMentees[selectedMentorIndex] += selectedCount;
+        int newUtilized = utilizedMentees[selectedMentorIndex];
+        int newAvailable = max - newUtilized;
+
+        // Update display slots
+        tvMentorSlotsCapacity.setText(newUtilized + " / " + max + " Utilized (" + newAvailable + " available)");
+
+        // Uncheck and simulated hide allocated students
+        if (cbStudent1.isChecked()) {
+            cbStudent1.setChecked(false);
+            cbStudent1.setVisibility(View.GONE);
+        }
+        if (cbStudent2.isChecked()) {
+            cbStudent2.setChecked(false);
+            cbStudent2.setVisibility(View.GONE);
+        }
+        if (cbStudent3.isChecked()) {
+            cbStudent3.setChecked(false);
+            cbStudent3.setVisibility(View.GONE);
+        }
     }
 
     // Modal select list

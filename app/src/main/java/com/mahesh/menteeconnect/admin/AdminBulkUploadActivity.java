@@ -99,12 +99,38 @@ public class AdminBulkUploadActivity extends AppCompatActivity {
                         runSeedingTicks();
                         break;
                     case 1:
-                        tvConsoleLogs.append("[INFO] Row 1: Parsed Mentee 'Priyanka Shinde' successfully.\n");
+                        tvConsoleLogs.append("[INFO] Row 1: Parsing Mentee 'Sakshi Shinde'...\n");
+                        // Execute REST POST for Sakshi Shinde
+                        String pPayload = "{\"firstName\":\"Sakshi\",\"lastName\":\"Shinde\",\"email\":\"Sakshi@example.com\",\"department\":\"Computer Science\",\"academicYear\":\"2025-2026\"}";
+                        AdminNetworkClient.post("/admin/students", pPayload, new AdminNetworkClient.ApiCallback() {
+                            @Override
+                            public void onSuccess(String jsonResponse) {
+                                tvConsoleLogs.append("[SUCCESS] Row 1: 'Sakshi Shinde' written to MongoDB!\n");
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                tvConsoleLogs.append("[INFO] Row 1: Parsed 'Sakshi Shinde' locally (Offline Mode).\n");
+                            }
+                        });
                         logStep++;
                         runSeedingTicks();
                         break;
                     case 2:
-                        tvConsoleLogs.append("[INFO] Row 2: Parsed Mentee 'Rohan Dev' successfully.\n");
+                        tvConsoleLogs.append("[INFO] Row 2: Parsing Mentee 'Rohan Dev'...\n");
+                        // Execute REST POST for Rohan Dev
+                        String rPayload = "{\"firstName\":\"Rohan\",\"lastName\":\"Dev\",\"email\":\"rohan@example.com\",\"department\":\"Computer Science\",\"academicYear\":\"2025-2026\"}";
+                        AdminNetworkClient.post("/admin/students", rPayload, new AdminNetworkClient.ApiCallback() {
+                            @Override
+                            public void onSuccess(String jsonResponse) {
+                                tvConsoleLogs.append("[SUCCESS] Row 2: 'Rohan Dev' written to MongoDB!\n");
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                tvConsoleLogs.append("[INFO] Row 2: Parsed 'Rohan Dev' locally (Offline Mode).\n");
+                            }
+                        });
                         logStep++;
                         runSeedingTicks();
                         break;

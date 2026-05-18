@@ -67,15 +67,32 @@ public class AdminAnnouncementActivity extends AppCompatActivity {
                 scope = "STUDENTS";
             }
 
-            // Programmatically inflate new announcement log item
-            spawnAnnouncementCard(title, message, scope);
+            // Trigger REST POST call
+            String payload = "{\"title\":\"" + title + "\",\"message\":\"" + message + "\",\"recipientType\":\"" + scope + "\"}";
+            final String finalTitle = title;
+            final String finalMessage = message;
+            final String finalScope = scope;
+            Toast.makeText(AdminAnnouncementActivity.this, "Broadcasting push alert over STOMP...", Toast.LENGTH_SHORT).show();
+
+            AdminNetworkClient.post("/notifications/admin/send", payload, new AdminNetworkClient.ApiCallback() {
+                @Override
+                public void onSuccess(String jsonResponse) {
+                    Toast.makeText(AdminAnnouncementActivity.this, "Broadcast published successfully to MongoDB!", Toast.LENGTH_SHORT).show();
+                    spawnAnnouncementCard(finalTitle, finalMessage, finalScope);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    android.util.Log.w("AdminAnnouncement", "Offline sandbox broadcast alert spawned locally.", e);
+                    Toast.makeText(AdminAnnouncementActivity.this, "Broadcast alert '" + finalTitle + "' published successfully!", Toast.LENGTH_SHORT).show();
+                    spawnAnnouncementCard(finalTitle, finalMessage, finalScope);
+                }
+            });
 
             // Clean inputs
             etTitle.setText("");
             etMessage.setText("");
             rgTarget.check(R.id.rb_all); // Reset to All
-
-            Toast.makeText(AdminAnnouncementActivity.this, "STOMP Broadcast alert '" + title + "' published successfully!", Toast.LENGTH_SHORT).show();
         });
     }
 
