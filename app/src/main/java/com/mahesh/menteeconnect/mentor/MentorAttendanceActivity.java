@@ -175,7 +175,7 @@ public class MentorAttendanceActivity extends AppCompatActivity {
                 text1.setText(studentName + " — " + status);
                 text1.setTextColor(getResources().getColor(status.equalsIgnoreCase("PRESENT") ? R.color.accent_green : R.color.google_red));
                 text1.setTextSize(13);
-                text1.setTextStyle(android.graphics.Typeface.BOLD);
+                text1.setTypeface(null, android.graphics.Typeface.BOLD);
                 
                 text2.setText("Date: " + date + " | Remarks: " + (remarks.isEmpty() ? "None" : remarks));
                 text2.setTextColor(getResources().getColor(R.color.text_secondary));

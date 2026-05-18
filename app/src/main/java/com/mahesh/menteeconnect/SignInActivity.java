@@ -16,6 +16,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.mahesh.menteeconnect.admin.AdminDashboardActivity;
 import com.mahesh.menteeconnect.mentor.MentorDashboardActivity;
+import com.mahesh.menteeconnect.student.StudentDashboardActivity;
 
 public class SignInActivity extends AppCompatActivity {
 
@@ -138,7 +139,7 @@ public class SignInActivity extends AppCompatActivity {
         } else if ("ROLE_MENTOR".equalsIgnoreCase(role) || email.toLowerCase().contains("mentor")) {
             intent = new Intent(SignInActivity.this, MentorDashboardActivity.class);
         } else {
-            intent = new Intent(SignInActivity.this, MainActivity.class);
+            intent = new Intent(SignInActivity.this, StudentDashboardActivity.class);
         }
         startActivity(intent);
         finish(); // prevent returning to sign-in page on back button

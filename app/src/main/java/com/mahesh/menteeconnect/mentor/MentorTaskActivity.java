@@ -179,7 +179,7 @@ public class MentorTaskActivity extends AppCompatActivity {
                 text1.setText(title + " [" + priority + "]");
                 text1.setTextColor(getResources().getColor(R.color.text_primary));
                 text1.setTextSize(13);
-                text1.setTextStyle(android.graphics.Typeface.BOLD);
+                text1.setTypeface(null, android.graphics.Typeface.BOLD);
                 
                 text2.setText("Assigned To: " + studentName + " | Due: " + dueDate + "\nStatus: " + status + " | Info: " + desc);
                 text2.setTextSize(11);
@@ -288,7 +288,7 @@ public class MentorTaskActivity extends AppCompatActivity {
 
         TextView tvStatusTitle = new TextView(this);
         tvStatusTitle.setText("Status Selection:");
-        tvStatusTitle.setTextStyle(android.graphics.Typeface.BOLD);
+        tvStatusTitle.setTypeface(null, android.graphics.Typeface.BOLD);
         container.addView(tvStatusTitle);
 
         RadioGroup rgStatus = new RadioGroup(this);
@@ -330,7 +330,7 @@ public class MentorTaskActivity extends AppCompatActivity {
 
         TextView tvFeedbackTitle = new TextView(this);
         tvFeedbackTitle.setText("Mentor Grading Feedback:");
-        tvFeedbackTitle.setTextStyle(android.graphics.Typeface.BOLD);
+        tvFeedbackTitle.setTypeface(null, android.graphics.Typeface.BOLD);
         container.addView(tvFeedbackTitle);
 
         EditText etFeedback = new EditText(this);

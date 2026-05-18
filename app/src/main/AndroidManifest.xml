@@ -63,6 +63,9 @@
         <activity
                 android:name=".mentor.MentorAnnouncementActivity"
                 android:exported="false"/>
+        <activity
+                android:name=".student.StudentDashboardActivity"
+                android:exported="false"/>
     </application>
 
 </manifest>
