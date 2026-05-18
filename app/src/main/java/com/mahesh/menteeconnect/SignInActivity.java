@@ -46,6 +46,32 @@ public class SignInActivity extends AppCompatActivity {
         ImageButton btnMicrosoft = findViewById(R.id.btn_social_microsoft);
         ImageButton btnFacebook = findViewById(R.id.btn_social_facebook);
 
+        // Social Button Click Handlers
+        btnGoogle.setOnClickListener(view -> 
+            Toast.makeText(SignInActivity.this, "Google Sign-In integration clicked!", Toast.LENGTH_SHORT).show()
+        );
+
+        btnGithub.setOnClickListener(view -> 
+            Toast.makeText(SignInActivity.this, "GitHub Sign-In integration clicked!", Toast.LENGTH_SHORT).show()
+        );
+
+        btnMicrosoft.setOnClickListener(view -> 
+            Toast.makeText(SignInActivity.this, "Microsoft Sign-In integration clicked!", Toast.LENGTH_SHORT).show()
+        );
+
+        btnFacebook.setOnClickListener(view -> 
+            Toast.makeText(SignInActivity.this, "Facebook Sign-In integration clicked!", Toast.LENGTH_SHORT).show()
+        );
+
+        // Subsections clicks
+        tvForgotPassword.setOnClickListener(view -> 
+            Toast.makeText(SignInActivity.this, "Password recovery is initialized.", Toast.LENGTH_SHORT).show()
+        );
+
+        tvSignUp.setOnClickListener(view -> 
+            Toast.makeText(SignInActivity.this, "Opening Registration Panel...", Toast.LENGTH_SHORT).show()
+        );
+
         // Sign In Action Click
         btnSignIn.setOnClickListener(view -> {
             String email = etEmail.getText().toString().trim();
@@ -102,31 +128,5 @@ public class SignInActivity extends AppCompatActivity {
         }
         startActivity(intent);
         finish(); // prevent returning to sign-in page on back button
-
-        // Social Button Click Handlers
-        btnGoogle.setOnClickListener(view -> 
-            Toast.makeText(SignInActivity.this, "Google Sign-In integration clicked!", Toast.LENGTH_SHORT).show()
-        );
-
-        btnGithub.setOnClickListener(view -> 
-            Toast.makeText(SignInActivity.this, "GitHub Sign-In integration clicked!", Toast.LENGTH_SHORT).show()
-        );
-
-        btnMicrosoft.setOnClickListener(view -> 
-            Toast.makeText(SignInActivity.this, "Microsoft Sign-In integration clicked!", Toast.LENGTH_SHORT).show()
-        );
-
-        btnFacebook.setOnClickListener(view -> 
-            Toast.makeText(SignInActivity.this, "Facebook Sign-In integration clicked!", Toast.LENGTH_SHORT).show()
-        );
-
-        // Subsections clicks
-        tvForgotPassword.setOnClickListener(view -> 
-            Toast.makeText(SignInActivity.this, "Password recovery is initialized.", Toast.LENGTH_SHORT).show()
-        );
-
-        tvSignUp.setOnClickListener(view -> 
-            Toast.makeText(SignInActivity.this, "Opening Registration Panel...", Toast.LENGTH_SHORT).show()
-        );
     }
 }
