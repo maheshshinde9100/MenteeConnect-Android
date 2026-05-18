@@ -1,4 +1,4 @@
-package com.mahesh.menteeconnect;
+package com.mahesh.menteeconnect.admin;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import com.mahesh.menteeconnect.R;
 
 public class AdminAnalyticsActivity extends AppCompatActivity {
 

@@ -1,4 +1,4 @@
-package com.mahesh.menteeconnect;
+package com.mahesh.menteeconnect.admin;
 
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -16,6 +16,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.card.MaterialCardView;
+import com.mahesh.menteeconnect.R;
 
 public class AdminAnnouncementActivity extends AppCompatActivity {
 

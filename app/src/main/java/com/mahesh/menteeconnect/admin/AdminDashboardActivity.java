@@ -1,4 +1,4 @@
-package com.mahesh.menteeconnect;
+package com.mahesh.menteeconnect.admin;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -12,6 +12,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.card.MaterialCardView;
+import com.mahesh.menteeconnect.R;
 import java.util.Random;
 
 public class AdminDashboardActivity extends AppCompatActivity {

@@ -28,25 +28,25 @@
                 android:name=".MainActivity"
                 android:exported="false"/>
         <activity
-                android:name=".AdminDashboardActivity"
+                android:name=".admin.AdminDashboardActivity"
                 android:exported="false"/>
         <activity
-                android:name=".AdminUserManagementActivity"
+                android:name=".admin.AdminUserManagementActivity"
                 android:exported="false"/>
         <activity
-                android:name=".AdminBatchManagementActivity"
+                android:name=".admin.AdminBatchManagementActivity"
                 android:exported="false"/>
         <activity
-                android:name=".AdminMentorAllocationActivity"
+                android:name=".admin.AdminMentorAllocationActivity"
                 android:exported="false"/>
         <activity
-                android:name=".AdminAnnouncementActivity"
+                android:name=".admin.AdminAnnouncementActivity"
                 android:exported="false"/>
         <activity
-                android:name=".AdminAnalyticsActivity"
+                android:name=".admin.AdminAnalyticsActivity"
                 android:exported="false"/>
         <activity
-                android:name=".AdminBulkUploadActivity"
+                android:name=".admin.AdminBulkUploadActivity"
                 android:exported="false"/>
     </application>
 

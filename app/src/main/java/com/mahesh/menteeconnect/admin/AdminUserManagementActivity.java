@@ -1,4 +1,4 @@
-package com.mahesh.menteeconnect;
+package com.mahesh.menteeconnect.admin;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -19,6 +20,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.card.MaterialCardView;
+import com.mahesh.menteeconnect.R;
 
 public class AdminUserManagementActivity extends AppCompatActivity {
 

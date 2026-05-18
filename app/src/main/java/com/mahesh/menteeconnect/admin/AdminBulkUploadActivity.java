@@ -1,4 +1,4 @@
-package com.mahesh.menteeconnect;
+package com.mahesh.menteeconnect.admin;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
@@ -14,6 +14,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.card.MaterialCardView;
+import com.mahesh.menteeconnect.R;
 
 public class AdminBulkUploadActivity extends AppCompatActivity {
 
