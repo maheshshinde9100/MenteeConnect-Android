@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
 }
@@ -14,6 +16,19 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Load and expose custom variables from local.properties securely
+        val properties = Properties()
+        val propertiesFile = rootProject.file("local.properties")
+        if (propertiesFile.exists()) {
+            propertiesFile.inputStream().use { properties.load(it) }
+        }
+        val baseUrl = properties.getProperty("backend.base.url") ?: "https://menteeconnect-backend.onrender.com/api"
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
