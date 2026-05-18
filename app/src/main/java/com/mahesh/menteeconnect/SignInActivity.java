@@ -15,6 +15,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.mahesh.menteeconnect.admin.AdminDashboardActivity;
+import com.mahesh.menteeconnect.mentor.MentorDashboardActivity;
 
 public class SignInActivity extends AppCompatActivity {
 
@@ -96,6 +97,7 @@ public class SignInActivity extends AppCompatActivity {
             com.mahesh.menteeconnect.admin.AdminNetworkClient.post("/auth/login", jsonPayload, new com.mahesh.menteeconnect.admin.AdminNetworkClient.ApiCallback() {
                 @Override
                 public void onSuccess(String jsonResponse) {
+                    String role = "";
                     try {
                         org.json.JSONObject obj = new org.json.JSONObject(jsonResponse);
                         String token = obj.optString("token", "");
@@ -103,26 +105,38 @@ public class SignInActivity extends AppCompatActivity {
                             com.mahesh.menteeconnect.admin.AdminNetworkClient.setAuthToken(token);
                             android.util.Log.d("SignInActivity", "Successfully initialized secure JWT session!");
                         }
+                        
+                        // Try parsing single role or roles array
+                        if (obj.has("role")) {
+                            role = obj.optString("role", "");
+                        } else if (obj.has("roles")) {
+                            org.json.JSONArray rolesArr = obj.optJSONArray("roles");
+                            if (rolesArr != null && rolesArr.length() > 0) {
+                                role = rolesArr.optString(0, "");
+                            }
+                        }
                     } catch (Exception e) {
                         android.util.Log.e("SignInActivity", "Failed to parse JWT payload response", e);
                     }
-                    navigateToDashboard(email);
+                    navigateToDashboard(email, role);
                 }
 
                 @Override
                 public void onFailure(Exception e) {
                     android.util.Log.w("SignInActivity", "API Sign In failed. Starting offline session.", e);
-                    navigateToDashboard(email);
+                    navigateToDashboard(email, "");
                 }
             });
         });
     }
 
-    private void navigateToDashboard(String email) {
+    private void navigateToDashboard(String email, String role) {
         Toast.makeText(SignInActivity.this, "Welcome to MenteeConnect!", Toast.LENGTH_LONG).show();
         Intent intent;
-        if (email.toLowerCase().contains("admin")) {
+        if ("ROLE_ADMIN".equalsIgnoreCase(role) || email.toLowerCase().contains("admin")) {
             intent = new Intent(SignInActivity.this, AdminDashboardActivity.class);
+        } else if ("ROLE_MENTOR".equalsIgnoreCase(role) || email.toLowerCase().contains("mentor")) {
+            intent = new Intent(SignInActivity.this, MentorDashboardActivity.class);
         } else {
             intent = new Intent(SignInActivity.this, MainActivity.class);
         }
