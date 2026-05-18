@@ -25,6 +25,8 @@
     <color name="accent_green_light">#D1FAE5</color>
     <color name="accent_orange">#F59E0B</color>    <!-- Warnings / Steps -->
     <color name="accent_orange_light">#FEF3C7</color>
+    <color name="accent_purple">#8B5CF6</color>     <!-- Purple -->
+    <color name="accent_purple_light">#EDE9FE</color>
     
     <!-- Social Authentication Colors -->
     <color name="google_red">#EA4335</color>       <!-- Google Red -->
