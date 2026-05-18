@@ -117,7 +117,6 @@ public class StudentDashboardActivity extends AppCompatActivity {
         ImageButton btnRefresh = findViewById(R.id.btn_refresh);
         btnRefresh.setOnClickListener(v -> loadStudentWorkspace());
 
-        MaterialButton cvUploadCert = findViewById(R.id.cv_upload_cert_trigger).findViewById(R.id.cv_upload_cert_trigger).findViewById(R.id.cv_upload_cert_trigger).findViewById(R.id.cv_upload_cert_trigger);
         // Bind to parent card layout click
         findViewById(R.id.cv_upload_cert_trigger).setOnClickListener(v -> showUploadCertificateDialog());
 
@@ -244,7 +243,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                         text1.setText("CGPA: " + String.format("%.2f", cgpa) + " | Attendance: " + String.format("%.1f%%", attendance));
                         text1.setTextColor(getResources().getColor(R.color.text_primary));
                         text1.setTextSize(13);
-                        text1.setTextStyle(android.graphics.Typeface.BOLD);
+                        text1.setTypeface(null, android.graphics.Typeface.BOLD);
 
                         text2.setText("Evaluated: " + evaluatedOn + "\nRemarks: " + remarks);
                         text2.setTextColor(getResources().getColor(R.color.text_secondary));
@@ -296,7 +295,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                         text1.setText(title + " — " + status);
                         text1.setTextColor(getResources().getColor(R.color.text_primary));
                         text1.setTextSize(13);
-                        text1.setTextStyle(android.graphics.Typeface.BOLD);
+                        text1.setTypeface(null, android.graphics.Typeface.BOLD);
 
                         text2.setText("Due Date: " + dueDate + "\nDetails: " + desc);
                         text2.setTextSize(11);
@@ -388,7 +387,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                         text1.setText(name + " — " + status);
                         text1.setTextColor(getResources().getColor(status.equalsIgnoreCase("APPROVED") ? R.color.accent_green : R.color.text_primary));
                         text1.setTextSize(13);
-                        text1.setTextStyle(android.graphics.Typeface.BOLD);
+                        text1.setTypeface(null, android.graphics.Typeface.BOLD);
 
                         text2.setText("Upload Date: " + date + "\nDescription: " + desc);
                         text2.setTextColor(getResources().getColor(R.color.text_secondary));
@@ -445,7 +444,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
         TextView tvHeading = new TextView(this);
         tvHeading.setText("Add Certificate to Academic Vault");
-        tvHeading.setTextStyle(android.graphics.Typeface.BOLD);
+        tvHeading.setTypeface(null, android.graphics.Typeface.BOLD);
         tvHeading.setPadding(0, 0, 0, 14);
         container.addView(tvHeading);
 

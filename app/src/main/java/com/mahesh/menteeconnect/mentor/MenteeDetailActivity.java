@@ -308,7 +308,7 @@ public class MenteeDetailActivity extends AppCompatActivity {
         // Clean layout to present as dialog form
         view.findViewById(R.id.btn_back).setVisibility(View.GONE);
         view.findViewById(R.id.spinner_students).setVisibility(View.GONE);
-        view.findViewById(R.id.layout_tasks_logs_container).getParent().getParent().setVisibility(View.GONE);
+        ((View) view.findViewById(R.id.layout_tasks_logs_container).getParent().getParent()).setVisibility(View.GONE);
 
         EditText etTitle = view.findViewById(R.id.et_task_title);
         EditText etDesc = view.findViewById(R.id.et_task_description);

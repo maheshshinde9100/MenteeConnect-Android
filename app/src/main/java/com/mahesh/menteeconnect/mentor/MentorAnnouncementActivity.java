@@ -144,7 +144,7 @@ public class MentorAnnouncementActivity extends AppCompatActivity {
                 text1.setText(title + (important ? " [URGENT]" : ""));
                 text1.setTextColor(getResources().getColor(important ? R.color.google_red : R.color.text_primary));
                 text1.setTextSize(13);
-                text1.setTextStyle(android.graphics.Typeface.BOLD);
+                text1.setTypeface(null, android.graphics.Typeface.BOLD);
                 
                 String body = content;
                 if (!attachmentLink.isEmpty()) {
