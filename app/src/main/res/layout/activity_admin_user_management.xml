@@ -284,7 +284,6 @@
                         android:layout_height="44dp"
                         android:background="@drawable/bg_social_button"
                         android:backgroundTint="@color/accent_orange_light"
-                        android:backgroundTint="#FFE2E8F0"
                         android:text="MS"
                         android:textColor="@color/text_primary"
                         android:textStyle="bold"
