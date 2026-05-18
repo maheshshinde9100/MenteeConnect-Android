@@ -61,19 +61,47 @@ public class SignInActivity extends AppCompatActivity {
                 return;
             }
 
-            // Mock Success Sign In
-            Toast.makeText(SignInActivity.this, "Welcome to MenteeConnect!", Toast.LENGTH_LONG).show();
-            
-            // Navigate to appropriate dashboard based on user role mapping
-            Intent intent;
-            if (email.toLowerCase().contains("admin")) {
-                intent = new Intent(SignInActivity.this, AdminDashboardActivity.class);
-            } else {
-                intent = new Intent(SignInActivity.this, MainActivity.class);
-            }
-            startActivity(intent);
-            finish(); // prevent returning to sign-in page on back button
+            // Create login credentials (derive username from email)
+            String username = email.contains("@") ? email.split("@")[0] : email;
+            String jsonPayload = "{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
+
+            // Run asynchronous API login handshake
+            Toast.makeText(SignInActivity.this, "Connecting to MenteeConnect Security...", Toast.LENGTH_SHORT).show();
+            com.mahesh.menteeconnect.admin.AdminNetworkClient.post("/auth/login", jsonPayload, new com.mahesh.menteeconnect.admin.AdminNetworkClient.ApiCallback() {
+                @Override
+                public void onSuccess(String jsonResponse) {
+                    try {
+                        org.json.JSONObject obj = new org.json.JSONObject(jsonResponse);
+                        String token = obj.optString("token", "");
+                        if (!token.isEmpty()) {
+                            com.mahesh.menteeconnect.admin.AdminNetworkClient.setAuthToken(token);
+                            android.util.Log.d("SignInActivity", "Successfully initialized secure JWT session!");
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.e("SignInActivity", "Failed to parse JWT payload response", e);
+                    }
+                    navigateToDashboard(email);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    android.util.Log.w("SignInActivity", "API Sign In failed. Starting offline session.", e);
+                    navigateToDashboard(email);
+                }
+            });
         });
+    }
+
+    private void navigateToDashboard(String email) {
+        Toast.makeText(SignInActivity.this, "Welcome to MenteeConnect!", Toast.LENGTH_LONG).show();
+        Intent intent;
+        if (email.toLowerCase().contains("admin")) {
+            intent = new Intent(SignInActivity.this, AdminDashboardActivity.class);
+        } else {
+            intent = new Intent(SignInActivity.this, MainActivity.class);
+        }
+        startActivity(intent);
+        finish(); // prevent returning to sign-in page on back button
 
         // Social Button Click Handlers
         btnGoogle.setOnClickListener(view -> 
