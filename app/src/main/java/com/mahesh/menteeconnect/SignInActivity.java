@@ -63,8 +63,13 @@ public class SignInActivity extends AppCompatActivity {
             // Mock Success Sign In
             Toast.makeText(SignInActivity.this, "Welcome to MenteeConnect!", Toast.LENGTH_LONG).show();
             
-            // Navigate to main activity dashboard
-            Intent intent = new Intent(SignInActivity.this, MainActivity.class);
+            // Navigate to appropriate dashboard based on user role mapping
+            Intent intent;
+            if (email.toLowerCase().contains("admin")) {
+                intent = new Intent(SignInActivity.this, AdminDashboardActivity.class);
+            } else {
+                intent = new Intent(SignInActivity.this, MainActivity.class);
+            }
             startActivity(intent);
             finish(); // prevent returning to sign-in page on back button
         });
