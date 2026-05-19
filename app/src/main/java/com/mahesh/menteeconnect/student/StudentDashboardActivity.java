@@ -117,6 +117,17 @@ public class StudentDashboardActivity extends AppCompatActivity {
         ImageButton btnRefresh = findViewById(R.id.btn_refresh);
         btnRefresh.setOnClickListener(v -> loadStudentWorkspace());
 
+        ImageButton btnLogout = findViewById(R.id.btn_logout);
+        btnLogout.setOnClickListener(view -> {
+            com.mahesh.menteeconnect.SessionManager sm = new com.mahesh.menteeconnect.SessionManager(StudentDashboardActivity.this);
+            sm.logoutUser();
+            com.mahesh.menteeconnect.admin.AdminNetworkClient.setAuthToken(null);
+            Intent intent = new Intent(StudentDashboardActivity.this, com.mahesh.menteeconnect.SignInActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
+
         // Bind to parent card layout click
         findViewById(R.id.cv_upload_cert_trigger).setOnClickListener(v -> showUploadCertificateDialog());
 
@@ -135,7 +146,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                     JSONObject profile = new JSONObject(jsonResponse);
                     studentDbId = profile.optString("id", "");
                     studentRollId = profile.optString("studentId", "");
-                    mentorId = profile.optString("mentorId", "");
+                    mentorId = profile.optString("mentorId", profile.optString("assignedMentorId", ""));
                     
                     String firstName = profile.optString("firstName", "");
                     String lastName = profile.optString("lastName", "");
@@ -472,11 +483,9 @@ public class StudentDashboardActivity extends AppCompatActivity {
             try {
                 JSONObject payload = new JSONObject();
                 payload.put("certificateName", name);
-                payload.put("fileName", name);
+                payload.put("filename", name);
+                payload.put("certificateUrl", "/uploads/certificates/" + name);
                 payload.put("description", desc);
-                
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                payload.put("uploadDate", sdf.format(new Date()));
 
                 // POST /students/me/certificates
                 AdminNetworkClient.post("/students/me/certificates", payload.toString(), new AdminNetworkClient.ApiCallback() {
