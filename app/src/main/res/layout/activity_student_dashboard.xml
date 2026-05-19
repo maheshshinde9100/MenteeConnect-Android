@@ -47,6 +47,15 @@
                 android:src="@android:drawable/ic_menu_rotate"
                 android:tint="@color/primary"
                 android:contentDescription="Refresh Data"/>
+
+            <ImageButton
+                android:id="@+id/btn_logout"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_lock_power_off"
+                android:contentDescription="Logout"
+                android:layout_marginStart="8dp"/>
         </LinearLayout>
 
         <!-- TabLayout for sliding tabs -->
