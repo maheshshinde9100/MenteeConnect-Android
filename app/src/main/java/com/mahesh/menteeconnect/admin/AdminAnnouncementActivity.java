@@ -94,6 +94,35 @@ public class AdminAnnouncementActivity extends AppCompatActivity {
             etMessage.setText("");
             rgTarget.check(R.id.rb_all); // Reset to All
         });
+
+        // Load existing announcements
+        loadAnnouncementsHistory();
+    }
+
+    private void loadAnnouncementsHistory() {
+        AdminNetworkClient.get("/notifications/my-notifications", new AdminNetworkClient.ApiCallback() {
+            @Override
+            public void onSuccess(String jsonResponse) {
+                try {
+                    org.json.JSONArray arr = new org.json.JSONArray(jsonResponse);
+                    layoutAnnouncementsList.removeAllViews();
+                    for (int i = 0; i < arr.length(); i++) {
+                        org.json.JSONObject obj = arr.getJSONObject(i);
+                        String title = obj.optString("title", "");
+                        String message = obj.optString("message", "");
+                        String scope = obj.optString("recipientType", "ALL");
+                        spawnAnnouncementCard(title, message, scope);
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("AdminAnnouncement", "Failed to parse announcements history", e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                android.util.Log.e("AdminAnnouncement", "Failed to fetch announcements history from server", e);
+            }
+        });
     }
 
     // Dynamic announcement items generator
