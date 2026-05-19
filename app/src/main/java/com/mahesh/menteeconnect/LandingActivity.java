@@ -11,11 +11,30 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import android.widget.Toast;
+import com.mahesh.menteeconnect.admin.AdminDashboardActivity;
+import com.mahesh.menteeconnect.mentor.MentorDashboardActivity;
+import com.mahesh.menteeconnect.student.StudentDashboardActivity;
+
 public class LandingActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Check persistent session
+        SessionManager sessionManager = new SessionManager(this);
+        if (sessionManager.isLoggedIn()) {
+            String token = sessionManager.getJwtToken();
+            String role = sessionManager.getUserRole();
+            String email = sessionManager.getUserEmail();
+            if (token != null && !token.isEmpty()) {
+                com.mahesh.menteeconnect.admin.AdminNetworkClient.setAuthToken(token);
+                navigateToDashboard(email, role);
+                return;
+            }
+        }
+
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_landing);
 
@@ -51,5 +70,19 @@ public class LandingActivity extends AppCompatActivity {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.linkedin.com/in/shindemahesh2112"));
             startActivity(browserIntent);
         });
+    }
+
+    private void navigateToDashboard(String email, String role) {
+        Toast.makeText(this, "Session Restored: Welcome back!", Toast.LENGTH_SHORT).show();
+        Intent intent;
+        if ("ROLE_ADMIN".equalsIgnoreCase(role)) {
+            intent = new Intent(LandingActivity.this, AdminDashboardActivity.class);
+        } else if ("ROLE_MENTOR".equalsIgnoreCase(role)) {
+            intent = new Intent(LandingActivity.this, MentorDashboardActivity.class);
+        } else {
+            intent = new Intent(LandingActivity.this, StudentDashboardActivity.class);
+        }
+        startActivity(intent);
+        finish();
     }
 }

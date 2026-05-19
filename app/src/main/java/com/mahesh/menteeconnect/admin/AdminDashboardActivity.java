@@ -49,6 +49,18 @@ public class AdminDashboardActivity extends AppCompatActivity {
             fetchLiveAnalytics(true);
         });
 
+        // Logout Event
+        ImageButton btnLogout = findViewById(R.id.btn_logout);
+        btnLogout.setOnClickListener(view -> {
+            com.mahesh.menteeconnect.SessionManager sm = new com.mahesh.menteeconnect.SessionManager(AdminDashboardActivity.this);
+            sm.logoutUser();
+            AdminNetworkClient.setAuthToken(null);
+            Intent intent = new Intent(AdminDashboardActivity.this, com.mahesh.menteeconnect.SignInActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
+
         // Navigation Card triggers
         MaterialCardView cardUsers = findViewById(R.id.card_user_management);
         MaterialCardView cardAlloc = findViewById(R.id.card_allocations);

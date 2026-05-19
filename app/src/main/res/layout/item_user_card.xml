@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_user"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/white"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/border_light"
+    android:layout_marginBottom="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical">
+
+        <!-- Initial Avatar -->
+        <TextView
+            android:id="@+id/tv_user_avatar"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_social_button"
+            android:backgroundTint="@color/primary_light"
+            android:text="RK"
+            android:textColor="@color/primary"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:gravity="center"/>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp">
+
+            <TextView
+                android:id="@+id/tv_user_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Rahul Kumar"
+                android:textColor="@color/text_primary"
+                android:textSize="15sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/tv_user_email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="rahul@example.com"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp"/>
+
+            <!-- Role Badge -->
+            <TextView
+                android:id="@+id/tv_user_role"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_social_button"
+                android:backgroundTint="@color/accent_green_light"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:text="STUDENT"
+                android:textColor="@color/accent_green"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp"/>
+        </LinearLayout>
+
+        <!-- Edit & Delete Buttons -->
+        <ImageButton
+            android:id="@+id/btn_edit_user"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_edit"
+            android:contentDescription="Edit User"
+            android:layout_marginEnd="4dp"/>
+
+        <ImageButton
+            android:id="@+id/btn_delete_user"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_delete"
+            android:contentDescription="Delete User"/>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

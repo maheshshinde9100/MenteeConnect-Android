@@ -136,10 +136,9 @@ public class MenteeDetailActivity extends AppCompatActivity {
     }
 
     private void loadStudentCertificates() {
-        // GET /students/{id}/certificates (we can query the student's certificates directly or through fallback API)
-        // Since we are in the mentor view, we can render the certificates if we have them
-        // Let's query them or let's use the certificates list from the detailed profile or generic student portfolio
-        AdminNetworkClient.get("/students/me/certificates", new AdminNetworkClient.ApiCallback() {
+        // GET /students/{id}/certificates
+        String certUrl = "/students/" + studentId + "/certificates";
+        AdminNetworkClient.get(certUrl, new AdminNetworkClient.ApiCallback() {
             @Override
             public void onSuccess(String jsonResponse) {
                 try {
@@ -152,7 +151,23 @@ public class MenteeDetailActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Exception e) {
-                Log.e(TAG, "Failed to fetch student certificates directly", e);
+                Log.w(TAG, "Failed to fetch student certificates directly, trying me fallback...", e);
+                AdminNetworkClient.get("/students/me/certificates", new AdminNetworkClient.ApiCallback() {
+                    @Override
+                    public void onSuccess(String jsonResponse) {
+                        try {
+                            JSONArray arr = new JSONArray(jsonResponse);
+                            populateCertificates(arr);
+                        } catch (Exception ex) {
+                            Log.e(TAG, "Error parsing me certificates fallback", ex);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Exception ex) {
+                        Log.e(TAG, "Failed both student and me certificates fetch", ex);
+                    }
+                });
             }
         });
     }

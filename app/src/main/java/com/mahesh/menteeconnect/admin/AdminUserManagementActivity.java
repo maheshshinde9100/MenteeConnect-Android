@@ -21,20 +21,13 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.card.MaterialCardView;
 import com.mahesh.menteeconnect.R;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class AdminUserManagementActivity extends AppCompatActivity {
 
-    // Views for User 1
-    private MaterialCardView cardUser1;
-    private TextView tvName1, tvEmail1, tvRole1;
-
-    // Views for User 2
-    private MaterialCardView cardUser2;
-    private TextView tvName2, tvEmail2, tvRole2;
-
-    // Views for User 3
-    private MaterialCardView cardUser3;
-    private TextView tvName3, tvEmail3, tvRole3;
+    private LinearLayout layoutUserList;
+    private JSONArray usersArray = new JSONArray();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,67 +46,29 @@ public class AdminUserManagementActivity extends AppCompatActivity {
         ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(view -> finish());
 
-        // Bind User 1 elements
-        cardUser1 = findViewById(R.id.card_user_1);
-        tvName1 = findViewById(R.id.tv_user_name_1);
-        tvEmail1 = findViewById(R.id.tv_user_email_1);
-        tvRole1 = findViewById(R.id.tv_user_role_1);
-        ImageButton btnEdit1 = findViewById(R.id.btn_edit_user_1);
-        ImageButton btnDelete1 = findViewById(R.id.btn_delete_user_1);
-
-        // Bind User 2 elements
-        cardUser2 = findViewById(R.id.card_user_2);
-        tvName2 = findViewById(R.id.tv_user_name_2);
-        tvEmail2 = findViewById(R.id.tv_user_email_2);
-        tvRole2 = findViewById(R.id.tv_user_role_2);
-        ImageButton btnEdit2 = findViewById(R.id.btn_edit_user_2);
-        ImageButton btnDelete2 = findViewById(R.id.btn_delete_user_2);
-
-        // Bind User 3 elements
-        cardUser3 = findViewById(R.id.card_user_3);
-        tvName3 = findViewById(R.id.tv_user_name_3);
-        tvEmail3 = findViewById(R.id.tv_user_email_3);
-        tvRole3 = findViewById(R.id.tv_user_role_3);
-        ImageButton btnEdit3 = findViewById(R.id.btn_edit_user_3);
-        ImageButton btnDelete3 = findViewById(R.id.btn_delete_user_3);
+        // Bind listing layout
+        layoutUserList = findViewById(R.id.layout_user_list);
 
         // Fetch initial roster from backend
         syncUserRoster();
-
-        // Setup Edit Modifiers
-        btnEdit1.setOnClickListener(view -> openEditDialog("645a7b8c9d0e1", tvName1, tvEmail1, tvRole1));
-        btnEdit2.setOnClickListener(view -> openEditDialog("645b8c9d0e1f2", tvName2, tvEmail2, tvRole2));
-        btnEdit3.setOnClickListener(view -> openEditDialog("645a7b8c9d0e3", tvName3, tvEmail3, tvRole3));
-
-        // Setup Delete Triggers
-        btnDelete1.setOnClickListener(
-                view -> showDeleteConfirmation("645a7b8c9d0e1", cardUser1, tvName1.getText().toString()));
-        btnDelete2.setOnClickListener(
-                view -> showDeleteConfirmation("645b8c9d0e1f2", cardUser2, tvName2.getText().toString()));
-        btnDelete3.setOnClickListener(
-                view -> showDeleteConfirmation("645a7b8c9d0e3", cardUser3, tvName3.getText().toString()));
 
         // Setup Search Roster Filter
         EditText etSearch = findViewById(R.id.et_search);
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // If search query exists, simulate backend search route
-                // /admin/users/search?name=
                 if (s.length() > 0) {
                     executeSearchCall(s.toString());
                 } else {
-                    filterRoster("");
+                    renderUserList(usersArray);
                 }
             }
 
             @Override
-            public void afterTextChanged(Editable s) {
-            }
+            public void afterTextChanged(Editable s) {}
         });
     }
 
@@ -122,19 +77,9 @@ public class AdminUserManagementActivity extends AppCompatActivity {
             @Override
             public void onSuccess(String jsonResponse) {
                 try {
-                    org.json.JSONArray array = new org.json.JSONArray(jsonResponse);
-                    if (array.length() > 0) {
-                        // Dynamically populate cards with returned database roster profiles
-                        bindUserCard(array.optJSONObject(0), tvName1, tvEmail1, tvRole1, cardUser1);
-                        if (array.length() > 1) {
-                            bindUserCard(array.optJSONObject(1), tvName2, tvEmail2, tvRole2, cardUser2);
-                        }
-                        if (array.length() > 2) {
-                            bindUserCard(array.optJSONObject(2), tvName3, tvEmail3, tvRole3, cardUser3);
-                        }
-                        Toast.makeText(AdminUserManagementActivity.this, "Roster synchronized with MongoDB!",
-                                Toast.LENGTH_SHORT).show();
-                    }
+                    usersArray = new JSONArray(jsonResponse);
+                    renderUserList(usersArray);
+                    Toast.makeText(AdminUserManagementActivity.this, "Roster synchronized with MongoDB!", Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
                     android.util.Log.e("AdminUserManagement", "Failed to parse users payload", e);
                 }
@@ -142,23 +87,79 @@ public class AdminUserManagementActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Exception e) {
-                android.util.Log.w("AdminUserManagement", "User API is offline. Operating in local sandbox mode.", e);
+                android.util.Log.w("AdminUserManagement", "User API offline or loading error", e);
+                Toast.makeText(AdminUserManagementActivity.this, "Sync failed: showing cached roster", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private void bindUserCard(org.json.JSONObject obj, TextView tvName, TextView tvEmail, TextView tvRole, View card) {
-        if (obj == null)
+    private void renderUserList(JSONArray array) {
+        layoutUserList.removeAllViews();
+        if (array == null || array.length() == 0) {
+            TextView tvEmpty = new TextView(this);
+            tvEmpty.setText("No matching users found.");
+            tvEmpty.setPadding(32, 32, 32, 32);
+            tvEmpty.setTextColor(getResources().getColor(R.color.text_secondary));
+            tvEmpty.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+            layoutUserList.addView(tvEmpty);
             return;
-        String first = obj.optString("firstName", "");
-        String last = obj.optString("lastName", "");
-        String email = obj.optString("email", "");
-        String role = obj.optString("role", "STUDENT");
+        }
 
-        tvName.setText(first + " " + last);
-        tvEmail.setText(email);
-        tvRole.setText(role);
-        card.setVisibility(View.VISIBLE);
+        for (int i = 0; i < array.length(); i++) {
+            try {
+                JSONObject obj = array.getJSONObject(i);
+                View view = LayoutInflater.from(this).inflate(R.layout.item_user_card, layoutUserList, false);
+
+                MaterialCardView cardUser = view.findViewById(R.id.card_user);
+                TextView tvUserAvatar = view.findViewById(R.id.tv_user_avatar);
+                TextView tvUserName = view.findViewById(R.id.tv_user_name);
+                TextView tvUserEmail = view.findViewById(R.id.tv_user_email);
+                TextView tvUserRole = view.findViewById(R.id.tv_user_role);
+                ImageButton btnEditUser = view.findViewById(R.id.btn_edit_user);
+                ImageButton btnDeleteUser = view.findViewById(R.id.btn_delete_user);
+
+                final String userId = obj.optString("id", "");
+                final String first = obj.optString("firstName", "");
+                final String last = obj.optString("lastName", "");
+                final String name = first + " " + last;
+                final String email = obj.optString("email", "");
+                final String role = obj.optString("role", "STUDENT");
+
+                tvUserName.setText(name.trim().isEmpty() ? "Anonymous User" : name);
+                tvUserEmail.setText(email);
+                tvUserRole.setText(role);
+
+                // Set Avatar Text
+                if (!first.isEmpty()) {
+                    tvUserAvatar.setText(String.valueOf(first.charAt(0)).toUpperCase());
+                } else if (!name.isEmpty() && !name.trim().isEmpty()) {
+                    tvUserAvatar.setText(String.valueOf(name.trim().charAt(0)).toUpperCase());
+                } else {
+                    tvUserAvatar.setText("?");
+                }
+
+                // Set Badge styles
+                if (role.equalsIgnoreCase("STUDENT")) {
+                    tvUserRole.setBackgroundTintList(getColorStateList(R.color.accent_green_light));
+                    tvUserRole.setTextColor(getColor(R.color.accent_green));
+                } else if (role.equalsIgnoreCase("MENTOR")) {
+                    tvUserRole.setBackgroundTintList(getColorStateList(R.color.primary_light));
+                    tvUserRole.setTextColor(getColor(R.color.primary));
+                } else {
+                    tvUserRole.setBackgroundTintList(getColorStateList(R.color.accent_orange_light));
+                    tvUserRole.setTextColor(getColor(R.color.accent_orange));
+                }
+
+                // Bind listener actions
+                btnEditUser.setOnClickListener(v -> openEditDialog(userId, name, email, role));
+                btnDeleteUser.setOnClickListener(v -> showDeleteConfirmation(userId, cardUser, name));
+
+                layoutUserList.addView(view);
+
+            } catch (Exception e) {
+                android.util.Log.e("AdminUserManagement", "Error rendering user item", e);
+            }
+        }
     }
 
     private void executeSearchCall(String query) {
@@ -167,21 +168,8 @@ public class AdminUserManagementActivity extends AppCompatActivity {
             @Override
             public void onSuccess(String jsonResponse) {
                 try {
-                    org.json.JSONArray array = new org.json.JSONArray(jsonResponse);
-                    // Hide all by default, only show matched ones
-                    cardUser1.setVisibility(View.GONE);
-                    cardUser2.setVisibility(View.GONE);
-                    cardUser3.setVisibility(View.GONE);
-
-                    if (array.length() > 0) {
-                        bindUserCard(array.optJSONObject(0), tvName1, tvEmail1, tvRole1, cardUser1);
-                    }
-                    if (array.length() > 1) {
-                        bindUserCard(array.optJSONObject(1), tvName2, tvEmail2, tvRole2, cardUser2);
-                    }
-                    if (array.length() > 2) {
-                        bindUserCard(array.optJSONObject(2), tvName3, tvEmail3, tvRole3, cardUser3);
-                    }
+                    JSONArray array = new JSONArray(jsonResponse);
+                    renderUserList(array);
                 } catch (Exception e) {
                     filterRoster(query); // Fallback to client-side filter
                 }
@@ -194,39 +182,30 @@ public class AdminUserManagementActivity extends AppCompatActivity {
         });
     }
 
-    // Dynamic search filtering simulator
+    // Dynamic search filtering local fallback
     private void filterRoster(String query) {
         String filter = query.toLowerCase();
-
-        // Filter User 1
-        if (cardUser1.getVisibility() != View.GONE) {
-            boolean matches = tvName1.getText().toString().toLowerCase().contains(filter) ||
-                    tvEmail1.getText().toString().toLowerCase().contains(filter);
-            cardUser1.setVisibility(matches ? View.VISIBLE : View.INVISIBLE);
+        JSONArray filtered = new JSONArray();
+        for (int i = 0; i < usersArray.length(); i++) {
+            try {
+                JSONObject obj = usersArray.getJSONObject(i);
+                String first = obj.optString("firstName", "").toLowerCase();
+                String last = obj.optString("lastName", "").toLowerCase();
+                String email = obj.optString("email", "").toLowerCase();
+                if (first.contains(filter) || last.contains(filter) || email.contains(filter)) {
+                    filtered.put(obj);
+                }
+            } catch (Exception e) {
+                // ignore
+            }
         }
-
-        // Filter User 2
-        if (cardUser2.getVisibility() != View.GONE) {
-            boolean matches = tvName2.getText().toString().toLowerCase().contains(filter) ||
-                    tvEmail2.getText().toString().toLowerCase().contains(filter);
-            cardUser2.setVisibility(matches ? View.VISIBLE : View.INVISIBLE);
-        }
-
-        // Filter User 3
-        if (cardUser3.getVisibility() != View.GONE) {
-            boolean matches = tvName3.getText().toString().toLowerCase().contains(filter) ||
-                    tvEmail3.getText().toString().toLowerCase().contains(filter);
-            cardUser3.setVisibility(matches ? View.VISIBLE : View.INVISIBLE);
-        }
+        renderUserList(filtered);
     }
 
-    // Admin dialog sheets pre-populated for user updates
-    private void openEditDialog(final String userId, final TextView tvName, final TextView tvEmail,
-            final TextView tvRole) {
+    private void openEditDialog(final String userId, final String name, final String email, final String role) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Modify User Profile");
 
-        // Let's programmatically assemble the dialog view cleanly
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(40, 30, 40, 30);
@@ -237,7 +216,7 @@ public class AdminUserManagementActivity extends AppCompatActivity {
         layout.addView(labelName);
 
         EditText etName = new EditText(this);
-        etName.setText(tvName.getText().toString());
+        etName.setText(name);
         etName.setTextSize(15);
         layout.addView(etName);
 
@@ -247,7 +226,7 @@ public class AdminUserManagementActivity extends AppCompatActivity {
         layout.addView(labelEmail);
 
         EditText etEmail = new EditText(this);
-        etEmail.setText(tvEmail.getText().toString());
+        etEmail.setText(email);
         etEmail.setTextSize(15);
         layout.addView(etEmail);
 
@@ -269,11 +248,9 @@ public class AdminUserManagementActivity extends AppCompatActivity {
         rgRole.addView(rbMentor);
         rgRole.addView(rbAdmin);
 
-        // Preselect current role
-        String currentRole = tvRole.getText().toString();
-        if (currentRole.equalsIgnoreCase("STUDENT"))
+        if (role.equalsIgnoreCase("STUDENT"))
             rbStudent.setChecked(true);
-        else if (currentRole.equalsIgnoreCase("MENTOR"))
+        else if (role.equalsIgnoreCase("MENTOR"))
             rbMentor.setChecked(true);
         else
             rbAdmin.setChecked(true);
@@ -290,14 +267,12 @@ public class AdminUserManagementActivity extends AppCompatActivity {
                 return;
             }
 
-            // Read Selected Radio
             String selectedRole = "STUDENT";
             if (rbMentor.isChecked())
                 selectedRole = "MENTOR";
             else if (rbAdmin.isChecked())
                 selectedRole = "ADMIN";
 
-            // Parse First and Last Names
             String first = newName;
             String last = "";
             if (newName.contains(" ")) {
@@ -306,72 +281,52 @@ public class AdminUserManagementActivity extends AppCompatActivity {
                 last = newName.substring(idx + 1);
             }
 
-            // Update live UI fields immediately
-            tvName.setText(newName);
-            tvEmail.setText(newEmail);
-            tvRole.setText(selectedRole);
-
-            // Re-style role background color
-            if (selectedRole.equals("STUDENT")) {
-                tvRole.setBackgroundResource(R.drawable.bg_social_button);
-                tvRole.setBackgroundTintList(getColorStateList(R.color.accent_green_light));
-                tvRole.setTextColor(getColor(R.color.accent_green));
-            } else if (selectedRole.equals("MENTOR")) {
-                tvRole.setBackgroundResource(R.drawable.bg_social_button);
-                tvRole.setBackgroundTintList(getColorStateList(R.color.primary_light));
-                tvRole.setTextColor(getColor(R.color.primary));
-            } else {
-                tvRole.setBackgroundResource(R.drawable.bg_social_button);
-                tvRole.setBackgroundTintList(getColorStateList(R.color.accent_orange_light));
-                tvRole.setTextColor(getColor(R.color.accent_orange));
-            }
-
             // Trigger REST PUT call
-            String payload = "{\"firstName\":\"" + first + "\",\"lastName\":\"" + last + "\",\"email\":\"" + newEmail
-                    + "\"}";
-            AdminNetworkClient.put("/admin/users/" + userId, payload, new AdminNetworkClient.ApiCallback() {
-                @Override
-                public void onSuccess(String jsonResponse) {
-                    Toast.makeText(AdminUserManagementActivity.this, "Database entry synchronized successfully!",
-                            Toast.LENGTH_SHORT).show();
-                }
+            try {
+                JSONObject payload = new JSONObject();
+                payload.put("firstName", first);
+                payload.put("lastName", last);
+                payload.put("email", newEmail);
+                payload.put("role", selectedRole);
 
-                @Override
-                public void onFailure(Exception e) {
-                    android.util.Log.w("AdminUserManagement", "Offline update applied locally.", e);
-                    Toast.makeText(AdminUserManagementActivity.this, "User profile updated successfully!",
-                            Toast.LENGTH_SHORT).show();
-                }
-            });
+                AdminNetworkClient.put("/admin/users/" + userId, payload.toString(), new AdminNetworkClient.ApiCallback() {
+                    @Override
+                    public void onSuccess(String jsonResponse) {
+                        Toast.makeText(AdminUserManagementActivity.this, "User profile updated successfully!", Toast.LENGTH_SHORT).show();
+                        syncUserRoster();
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        android.util.Log.e("AdminUserManagement", "Failed to update profile", e);
+                        Toast.makeText(AdminUserManagementActivity.this, "Failed to update profile", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } catch (Exception ex) {
+                android.util.Log.e("AdminUserManagement", "Error building update request", ex);
+            }
         });
 
         builder.setNegativeButton("Cancel", null);
         builder.show();
     }
 
-    // Admin Deletions Confirmation Dialogue
     private void showDeleteConfirmation(final String userId, final MaterialCardView card, final String name) {
         new AlertDialog.Builder(this)
                 .setTitle("Delete User Profile")
-                .setMessage("Are you sure you want to permanently delete " + name
-                        + " from MenteeConnect? This action is irreversible.")
+                .setMessage("Are you sure you want to permanently delete " + name + " from MenteeConnect? This action is irreversible.")
                 .setPositiveButton("Delete Profile", (dialog, which) -> {
-                    // Update UI immediately
-                    card.setVisibility(View.GONE);
-
-                    // Trigger REST DELETE call
                     AdminNetworkClient.delete("/admin/users/" + userId, new AdminNetworkClient.ApiCallback() {
                         @Override
                         public void onSuccess(String jsonResponse) {
-                            Toast.makeText(AdminUserManagementActivity.this, name + " account deleted from database.",
-                                    Toast.LENGTH_SHORT).show();
+                            Toast.makeText(AdminUserManagementActivity.this, name + " account deleted from database.", Toast.LENGTH_SHORT).show();
+                            syncUserRoster();
                         }
 
                         @Override
                         public void onFailure(Exception e) {
-                            android.util.Log.w("AdminUserManagement", "Offline delete applied locally.", e);
-                            Toast.makeText(AdminUserManagementActivity.this, name + " account deleted successfully.",
-                                    Toast.LENGTH_SHORT).show();
+                            android.util.Log.e("AdminUserManagement", "Failed to delete account", e);
+                            Toast.makeText(AdminUserManagementActivity.this, "Failed to delete account", Toast.LENGTH_SHORT).show();
                         }
                     });
                 })

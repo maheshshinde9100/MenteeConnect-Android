@@ -153,35 +153,15 @@
                     android:textStyle="bold"
                     android:layout_marginBottom="16dp"/>
 
-                <!-- Checkbox 1 -->
-                <CheckBox
-                    android:id="@+id/cb_student_1"
+                <LinearLayout
+                    android:id="@+id/layout_students_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Rahul Kumar (STU2026001)"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:layout_marginBottom="8dp"/>
+                    android:orientation="vertical">
 
-                <!-- Checkbox 2 -->
-                <CheckBox
-                    android:id="@+id/cb_student_2"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Priyanka Shinde (STU2026002)"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:layout_marginBottom="8dp"/>
+                    <!-- Checkboxes will be populated dynamically -->
 
-                <!-- Checkbox 3 -->
-                <CheckBox
-                    android:id="@+id/cb_student_3"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Rohan Dev (STU2026003)"
-                    android:textColor="@color/text_primary"
-                    android:textSize="14sp"
-                    android:layout_marginBottom="8dp"/>
+                </LinearLayout>
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

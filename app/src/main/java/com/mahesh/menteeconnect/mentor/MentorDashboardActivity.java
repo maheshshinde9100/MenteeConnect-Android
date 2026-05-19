@@ -89,6 +89,17 @@ public class MentorDashboardActivity extends AppCompatActivity {
         ImageButton btnRefresh = findViewById(R.id.btn_refresh);
         btnRefresh.setOnClickListener(v -> loadMentorProfile());
 
+        ImageButton btnLogout = findViewById(R.id.btn_logout);
+        btnLogout.setOnClickListener(view -> {
+            com.mahesh.menteeconnect.SessionManager sm = new com.mahesh.menteeconnect.SessionManager(MentorDashboardActivity.this);
+            sm.logoutUser();
+            AdminNetworkClient.setAuthToken(null);
+            Intent intent = new Intent(MentorDashboardActivity.this, com.mahesh.menteeconnect.SignInActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
+
         // Initial Load
         loadMentorProfile();
     }

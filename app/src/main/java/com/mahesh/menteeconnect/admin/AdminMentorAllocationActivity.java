@@ -15,18 +15,22 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.mahesh.menteeconnect.R;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AdminMentorAllocationActivity extends AppCompatActivity {
 
     private TextView tvSelectedMentorName, tvMentorSlotsCapacity;
-    private LinearLayout layoutSlotsDisplay;
-    private CheckBox cbStudent1, cbStudent2, cbStudent3;
+    private LinearLayout layoutSlotsDisplay, layoutStudentsContainer;
+    
+    private JSONArray mentorsArray = new JSONArray();
+    private JSONArray studentsArray = new JSONArray();
+    private int selectedMentorIndex = -1;
 
-    // Mentor Capacity states
-    private int selectedMentorIndex = -1; // -1 means none
-    private final String[] mentorNames = {"Alice Williams", "John Doe", "Mahesh Shinde"};
-    private final int[] maxMentees = {15, 15, 15};
-    private final int[] utilizedMentees = {8, 14, 4}; // John has only 1 available slot!
+    private final List<CheckBox> studentCheckBoxes = new ArrayList<>();
+    private final List<String> studentIdsList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,14 +54,15 @@ public class AdminMentorAllocationActivity extends AppCompatActivity {
         tvSelectedMentorName = findViewById(R.id.tv_selected_mentor_name);
         tvMentorSlotsCapacity = findViewById(R.id.tv_mentor_slots_capacity);
         layoutSlotsDisplay = findViewById(R.id.layout_slots_display);
-
-        cbStudent1 = findViewById(R.id.cb_student_1);
-        cbStudent2 = findViewById(R.id.cb_student_2);
-        cbStudent3 = findViewById(R.id.cb_student_3);
+        layoutStudentsContainer = findViewById(R.id.layout_students_container);
         Button btnAllocate = findViewById(R.id.btn_allocate);
 
         // Click to choose mentor
         layoutSelect.setOnClickListener(view -> triggerMentorSelection());
+
+        // Fetch live database assets
+        loadMentorsData();
+        loadStudentsData();
 
         // Pair allocator click
         btnAllocate.setOnClickListener(view -> {
@@ -66,120 +71,198 @@ public class AdminMentorAllocationActivity extends AppCompatActivity {
                 return;
             }
 
-            // Calculate selected students count
-            int selectedCount = 0;
-            StringBuilder studentIdsBuilder = new StringBuilder();
-            if (cbStudent1.isChecked() && cbStudent1.getVisibility() != View.GONE) {
-                selectedCount++;
-                studentIdsBuilder.append("\"645a7b8c9d0e1\",");
-            }
-            if (cbStudent2.isChecked() && cbStudent2.getVisibility() != View.GONE) {
-                selectedCount++;
-                studentIdsBuilder.append("\"645a7b8c9d0e2\",");
-            }
-            if (cbStudent3.isChecked() && cbStudent3.getVisibility() != View.GONE) {
-                selectedCount++;
-                studentIdsBuilder.append("\"645a7b8c9d0e3\",");
+            JSONObject selectedMentor = mentorsArray.optJSONObject(selectedMentorIndex);
+            if (selectedMentor == null) return;
+
+            String mentorDbId = selectedMentor.optString("id", "");
+            String mentorName = selectedMentor.optString("firstName", "") + " " + selectedMentor.optString("lastName", "");
+            int max = selectedMentor.optInt("maxStudents", 15);
+            
+            JSONArray assignedArr = selectedMentor.optJSONArray("assignedStudentIds");
+            int utilized = assignedArr != null ? assignedArr.length() : 0;
+            int available = max - utilized;
+
+            // Collect selected students
+            List<String> selectedIds = new ArrayList<>();
+            for (int i = 0; i < studentCheckBoxes.size(); i++) {
+                if (studentCheckBoxes.get(i).isChecked()) {
+                    selectedIds.add(studentIdsList.get(i));
+                }
             }
 
-            if (selectedCount == 0) {
+            if (selectedIds.isEmpty()) {
                 Toast.makeText(AdminMentorAllocationActivity.this, "Please choose at least one student to assign!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            // Clean trailing comma from student IDs array
-            String studentIdsJson = studentIdsBuilder.toString();
-            if (studentIdsJson.endsWith(",")) {
-                studentIdsJson = studentIdsJson.substring(0, studentIdsJson.length() - 1);
-            }
-
-            // Read Mentor stats
-            final String mentorName = mentorNames[selectedMentorIndex];
-            final String mentorId = selectedMentorIndex == 0 ? "645b8c9d0e1f2" : (selectedMentorIndex == 1 ? "645b8c9d0e1f3" : "645b8c9d0e1f4");
-            int max = maxMentees[selectedMentorIndex];
-            int utilized = utilizedMentees[selectedMentorIndex];
-            int available = max - utilized;
-
-            // Capacity check validation
-            if (selectedCount > available) {
+            if (selectedIds.size() > available) {
                 new AlertDialog.Builder(AdminMentorAllocationActivity.this)
                         .setTitle("Capacity Limit Overload")
-                        .setMessage("Warning: You are attempting to assign " + selectedCount + " students to " + mentorName +
-                                ", but they only have " + available + " slot(s) remaining. Please select fewer students or choose another mentor.")
-                        .setPositiveButton("Configure Options", null)
+                        .setMessage("Warning: You selected " + selectedIds.size() + " students, but " + mentorName +
+                                " only has " + available + " slot(s) remaining. Please select fewer students or choose another mentor.")
+                        .setPositiveButton("Dismiss", null)
                         .setIcon(android.R.drawable.ic_dialog_alert)
                         .show();
                 return;
             }
 
             // Construct REST assign-mentor payload
-            String payload = "{\"mentorId\":\"" + mentorId + "\",\"studentIds\":[" + studentIdsJson + "]}";
-            final int count = selectedCount;
-            Toast.makeText(AdminMentorAllocationActivity.this, "Writing student allocations to database...", Toast.LENGTH_SHORT).show();
-
-            AdminNetworkClient.post("/admin/assign-mentor", payload, new AdminNetworkClient.ApiCallback() {
-                @Override
-                public void onSuccess(String jsonResponse) {
-                    Toast.makeText(AdminMentorAllocationActivity.this, "Allocations updated successfully in MongoDB!", Toast.LENGTH_LONG).show();
-                    applyLocalAllocation(count, mentorName, max);
+            try {
+                JSONObject payload = new JSONObject();
+                payload.put("mentorId", mentorDbId);
+                
+                JSONArray idsArray = new JSONArray();
+                for (String id : selectedIds) {
+                    idsArray.put(id);
                 }
+                payload.put("studentIds", idsArray);
 
-                @Override
-                public void onFailure(Exception e) {
-                    android.util.Log.w("AdminMentorAllocation", "Offline mode assignment executed locally.", e);
-                    Toast.makeText(AdminMentorAllocationActivity.this, "Successfully allocated " + count + " student(s) to " + mentorName + "!", Toast.LENGTH_LONG).show();
-                    applyLocalAllocation(count, mentorName, max);
-                }
-            });
+                Toast.makeText(AdminMentorAllocationActivity.this, "Assigning student allocations...", Toast.LENGTH_SHORT).show();
+
+                AdminNetworkClient.post("/admin/assign-mentor", payload.toString(), new AdminNetworkClient.ApiCallback() {
+                    @Override
+                    public void onSuccess(String jsonResponse) {
+                        Toast.makeText(AdminMentorAllocationActivity.this, "Allocations updated successfully in MongoDB!", Toast.LENGTH_LONG).show();
+                        
+                        // Clear selected mentor index and reload fresh updates
+                        selectedMentorIndex = -1;
+                        tvSelectedMentorName.setText("Choose Mentor...");
+                        layoutSlotsDisplay.setVisibility(View.GONE);
+                        
+                        loadMentorsData();
+                        loadStudentsData();
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        android.util.Log.e("AdminMentorAllocation", "Failed allocating mentor", e);
+                        Toast.makeText(AdminMentorAllocationActivity.this, "Connection Error: Failed to execute allocations", Toast.LENGTH_LONG).show();
+                    }
+                });
+
+            } catch (Exception ex) {
+                android.util.Log.e("AdminMentorAllocation", "Error building payload", ex);
+            }
         });
     }
 
-    private void applyLocalAllocation(int selectedCount, String mentorName, int max) {
-        utilizedMentees[selectedMentorIndex] += selectedCount;
-        int newUtilized = utilizedMentees[selectedMentorIndex];
-        int newAvailable = max - newUtilized;
+    private void loadMentorsData() {
+        AdminNetworkClient.get("/admin/mentors?page=0&size=50", new AdminNetworkClient.ApiCallback() {
+            @Override
+            public void onSuccess(String jsonResponse) {
+                try {
+                    JSONObject root = new JSONObject(jsonResponse);
+                    mentorsArray = root.optJSONArray("content");
+                    if (mentorsArray == null) {
+                        mentorsArray = new JSONArray();
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("AdminMentorAllocation", "Failed loading mentors array", e);
+                }
+            }
 
-        // Update display slots
-        tvMentorSlotsCapacity.setText(newUtilized + " / " + max + " Utilized (" + newAvailable + " available)");
+            @Override
+            public void onFailure(Exception e) {
+                android.util.Log.e("AdminMentorAllocation", "Failed to retrieve mentors", e);
+            }
+        });
+    }
 
-        // Uncheck and simulated hide allocated students
-        if (cbStudent1.isChecked()) {
-            cbStudent1.setChecked(false);
-            cbStudent1.setVisibility(View.GONE);
+    private void loadStudentsData() {
+        AdminNetworkClient.get("/admin/students", new AdminNetworkClient.ApiCallback() {
+            @Override
+            public void onSuccess(String jsonResponse) {
+                try {
+                    studentsArray = new JSONArray(jsonResponse);
+                    populateStudentsList();
+                } catch (Exception e) {
+                    android.util.Log.e("AdminMentorAllocation", "Failed loading students list", e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                android.util.Log.e("AdminMentorAllocation", "Failed to retrieve students roster", e);
+            }
+        });
+    }
+
+    private void populateStudentsList() {
+        layoutStudentsContainer.removeAllViews();
+        studentCheckBoxes.clear();
+        studentIdsList.clear();
+
+        if (studentsArray.length() == 0) {
+            TextView tvEmpty = new TextView(this);
+            tvEmpty.setText("No students currently registered in system.");
+            tvEmpty.setTextColor(getResources().getColor(R.color.text_secondary));
+            tvEmpty.setPadding(8, 8, 8, 8);
+            layoutStudentsContainer.addView(tvEmpty);
+            return;
         }
-        if (cbStudent2.isChecked()) {
-            cbStudent2.setChecked(false);
-            cbStudent2.setVisibility(View.GONE);
-        }
-        if (cbStudent3.isChecked()) {
-            cbStudent3.setChecked(false);
-            cbStudent3.setVisibility(View.GONE);
+
+        for (int i = 0; i < studentsArray.length(); i++) {
+            try {
+                JSONObject student = studentsArray.getJSONObject(i);
+                String dbId = student.optString("id", "");
+                String roll = student.optString("studentId", student.optString("rollNumber", ""));
+                String name = student.optString("firstName", "") + " " + student.optString("lastName", "");
+                String mentorName = student.optString("mentorName", "");
+
+                CheckBox cb = new CheckBox(this);
+                cb.setText(name + " (" + roll + ")");
+                cb.setTextColor(getResources().getColor(R.color.text_primary));
+                cb.setTextSize(14);
+                cb.setPadding(0, 12, 0, 12);
+
+                if (mentorName != null && !mentorName.isEmpty() && !mentorName.equalsIgnoreCase("null")) {
+                    cb.setText(name + " (" + roll + ") [Mentor: " + mentorName + "]");
+                    cb.setTextColor(getResources().getColor(R.color.text_secondary));
+                }
+
+                layoutStudentsContainer.addView(cb);
+                studentCheckBoxes.add(cb);
+                studentIdsList.add(dbId);
+
+            } catch (Exception e) {
+                android.util.Log.e("AdminMentorAllocation", "Error rendering checkbox", e);
+            }
         }
     }
 
-    // Modal select list
     private void triggerMentorSelection() {
-        String[] options = new String[mentorNames.length];
-        for (int i = 0; i < mentorNames.length; i++) {
-            int available = maxMentees[i] - utilizedMentees[i];
-            options[i] = mentorNames[i] + " (" + available + " slots free)";
+        if (mentorsArray == null || mentorsArray.length() == 0) {
+            Toast.makeText(this, "No mentors loaded. Please sync server.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] options = new String[mentorsArray.length()];
+        for (int i = 0; i < mentorsArray.length(); i++) {
+            JSONObject mentor = mentorsArray.optJSONObject(i);
+            String name = mentor.optString("firstName", "") + " " + mentor.optString("lastName", "");
+            int max = mentor.optInt("maxStudents", 15);
+            JSONArray assignedArr = mentor.optJSONArray("assignedStudentIds");
+            int utilized = assignedArr != null ? assignedArr.length() : 0;
+            int available = max - utilized;
+            options[i] = name + " (" + available + " slots available)";
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("Select Mentor")
+                .setTitle("Select Faculty Advisor Mentor")
                 .setItems(options, (dialog, index) -> {
                     selectedMentorIndex = index;
-                    String mentorName = mentorNames[index];
-                    tvSelectedMentorName.setText(mentorName);
+                    JSONObject mentor = mentorsArray.optJSONObject(index);
+                    String name = mentor.optString("firstName", "") + " " + mentor.optString("lastName", "");
+                    tvSelectedMentorName.setText(name);
 
-                    int max = maxMentees[index];
-                    int utilized = utilizedMentees[index];
+                    int max = mentor.optInt("maxStudents", 15);
+                    JSONArray assignedArr = mentor.optJSONArray("assignedStudentIds");
+                    int utilized = assignedArr != null ? assignedArr.length() : 0;
                     int available = max - utilized;
 
                     tvMentorSlotsCapacity.setText(utilized + " / " + max + " Utilized (" + available + " available)");
                     layoutSlotsDisplay.setVisibility(View.VISIBLE);
 
-                    // Re-style slot text based on capacity warnings
                     if (available <= 1) {
                         tvMentorSlotsCapacity.setTextColor(getColor(R.color.google_red));
                     } else if (available <= 5) {
