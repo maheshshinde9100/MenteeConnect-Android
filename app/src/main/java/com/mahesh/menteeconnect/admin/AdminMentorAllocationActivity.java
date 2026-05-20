@@ -96,7 +96,7 @@ public class AdminMentorAllocationActivity extends AppCompatActivity {
             }
 
             if (selectedIds.size() > available) {
-                new AlertDialog.Builder(AdminMentorAllocationActivity.this)
+                new com.google.android.material.dialog.MaterialAlertDialogBuilder(AdminMentorAllocationActivity.this)
                         .setTitle("Capacity Limit Overload")
                         .setMessage("Warning: You selected " + selectedIds.size() + " students, but " + mentorName +
                                 " only has " + available + " slot(s) remaining. Please select fewer students or choose another mentor.")
@@ -247,7 +247,7 @@ public class AdminMentorAllocationActivity extends AppCompatActivity {
             options[i] = name + " (" + available + " slots available)";
         }
 
-        new AlertDialog.Builder(this)
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle("Select Faculty Advisor Mentor")
                 .setItems(options, (dialog, index) -> {
                     selectedMentorIndex = index;

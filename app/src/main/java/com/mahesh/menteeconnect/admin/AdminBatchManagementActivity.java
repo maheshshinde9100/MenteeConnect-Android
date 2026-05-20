@@ -310,7 +310,7 @@ public class AdminBatchManagementActivity extends AppCompatActivity {
                         mentorsList[i] = name + " (" + dept + ")";
                     }
 
-                    new AlertDialog.Builder(AdminBatchManagementActivity.this)
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(AdminBatchManagementActivity.this)
                             .setTitle("Select Advisor Faculty")
                             .setItems(mentorsList, (dialog, index) -> {
                                 final String mentorId = mentorIdsList[index];

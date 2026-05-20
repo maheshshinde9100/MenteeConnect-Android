@@ -64,7 +64,7 @@ public class AdminBulkUploadActivity extends AppCompatActivity {
                 "mentee_connect_demo_dataset.csv (32.1 KB)"
         };
 
-        new AlertDialog.Builder(this)
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle("Select CSV File Target")
                 .setItems(mockFiles, (dialog, index) -> {
                     String selected = mockFiles[index];

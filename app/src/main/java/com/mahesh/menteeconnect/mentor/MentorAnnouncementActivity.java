@@ -169,7 +169,7 @@ public class MentorAnnouncementActivity extends AppCompatActivity {
                 // Add delete capability on long click
                 final String finalUpdateId = updateId;
                 view.setOnLongClickListener(v -> {
-                    new android.app.AlertDialog.Builder(MentorAnnouncementActivity.this)
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(MentorAnnouncementActivity.this)
                         .setTitle("Delete Announcement")
                         .setMessage("Are you sure you want to remove this notice board entry?")
                         .setPositiveButton("Delete", (dialog, which) -> {

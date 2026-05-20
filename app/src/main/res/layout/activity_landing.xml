@@ -862,7 +862,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="📧 contact.shindemahesh2112@gmail.com\n📍 Sanjivani College of Engineering, Kopargaon"
+            android:text="Email: contact.shindemahesh2112@gmail.com\nLocation: Sanjivani College of Engineering, Kopargaon"
             android:textColor="@color/text_secondary"
             android:textSize="14sp"
             android:lineSpacingExtra="5dp"
@@ -885,7 +885,7 @@
                 android:backgroundTint="@color/accent_green_light"
                 android:paddingHorizontal="14dp"
                 android:paddingVertical="4dp"
-                android:text="🟢 All systems operational"
+                android:text="Systems Operational"
                 android:textColor="@color/accent_green"
                 android:textSize="12sp"
                 android:textStyle="bold"

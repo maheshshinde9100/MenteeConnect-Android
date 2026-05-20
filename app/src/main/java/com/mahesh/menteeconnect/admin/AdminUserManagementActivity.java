@@ -203,7 +203,7 @@ public class AdminUserManagementActivity extends AppCompatActivity {
     }
 
     private void openEditDialog(final String userId, final String name, final String email, final String role) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        com.google.android.material.dialog.MaterialAlertDialogBuilder builder = new com.google.android.material.dialog.MaterialAlertDialogBuilder(this);
         builder.setTitle("Modify User Profile");
 
         LinearLayout layout = new LinearLayout(this);
@@ -312,7 +312,7 @@ public class AdminUserManagementActivity extends AppCompatActivity {
     }
 
     private void showDeleteConfirmation(final String userId, final MaterialCardView card, final String name) {
-        new AlertDialog.Builder(this)
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle("Delete User Profile")
                 .setMessage("Are you sure you want to permanently delete " + name + " from MenteeConnect? This action is irreversible.")
                 .setPositiveButton("Delete Profile", (dialog, which) -> {

@@ -184,7 +184,7 @@ public class MentorAttendanceActivity extends AppCompatActivity {
                 // Add delete capability on long click
                 final String finalLogId = logId;
                 view.setOnLongClickListener(v -> {
-                    new android.app.AlertDialog.Builder(MentorAttendanceActivity.this)
+                    new com.google.android.material.dialog.MaterialAlertDialogBuilder(MentorAttendanceActivity.this)
                         .setTitle("Delete Attendance Log")
                         .setMessage("Are you sure you want to remove this attendance log entry?")
                         .setPositiveButton("Delete", (dialog, which) -> {

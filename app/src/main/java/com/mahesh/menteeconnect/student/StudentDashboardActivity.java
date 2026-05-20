@@ -324,7 +324,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                         final String finalStatus = status;
                         view.setOnClickListener(v -> {
                             String nextStatus = finalStatus.equalsIgnoreCase("COMPLETED") ? "ASSIGNED" : "COMPLETED";
-                            new android.app.AlertDialog.Builder(StudentDashboardActivity.this)
+                            new com.google.android.material.dialog.MaterialAlertDialogBuilder(StudentDashboardActivity.this)
                                 .setTitle("Update Task Status")
                                 .setMessage("Mark this task as " + nextStatus + "?")
                                 .setPositiveButton("Yes, Update", (dialog, which) -> {
@@ -407,7 +407,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                         // Delete capability on long click
                         final String finalCertId = certId;
                         view.setOnLongClickListener(v -> {
-                            new android.app.AlertDialog.Builder(StudentDashboardActivity.this)
+                            new com.google.android.material.dialog.MaterialAlertDialogBuilder(StudentDashboardActivity.this)
                                 .setTitle("Delete Certificate")
                                 .setMessage("Remove this certificate from your academic portfolio?")
                                 .setPositiveButton("Remove", (dialog, which) -> {
@@ -446,7 +446,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
     }
 
     private void showUploadCertificateDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        com.google.android.material.dialog.MaterialAlertDialogBuilder builder = new com.google.android.material.dialog.MaterialAlertDialogBuilder(this);
         builder.setTitle("Upload New Credentials");
 
         LinearLayout container = new LinearLayout(this);

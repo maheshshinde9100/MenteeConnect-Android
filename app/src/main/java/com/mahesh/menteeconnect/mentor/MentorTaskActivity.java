@@ -272,7 +272,7 @@ public class MentorTaskActivity extends AppCompatActivity {
     }
 
     private void showGradeTaskDialog(String taskId, String title, String description, String status, String feedback) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        com.google.android.material.dialog.MaterialAlertDialogBuilder builder = new com.google.android.material.dialog.MaterialAlertDialogBuilder(this);
         builder.setTitle("Review & Grade Task: " + title);
 
         View view = LayoutInflater.from(this).inflate(R.layout.activity_signin, null); // recycle signin layout or construct custom dialog layout

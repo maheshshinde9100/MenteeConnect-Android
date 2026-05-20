@@ -316,7 +316,7 @@ public class MenteeDetailActivity extends AppCompatActivity {
     }
 
     private void showAssignTaskDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        com.google.android.material.dialog.MaterialAlertDialogBuilder builder = new com.google.android.material.dialog.MaterialAlertDialogBuilder(this);
         builder.setTitle("Assign New Academic Task");
 
         View view = LayoutInflater.from(this).inflate(R.layout.activity_mentor_task, null);
