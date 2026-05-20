@@ -20,13 +20,13 @@ public class AdminAnalyticsActivity extends AppCompatActivity {
     private ProgressBar pbUtilization;
 
     // Targets percentages
-    private int targetDept1 = 45;
-    private int targetDept2 = 38;
-    private int targetDept3 = 17;
-    private int targetCgpa1 = 22;
-    private int targetCgpa2 = 58;
-    private int targetCgpa3 = 20;
-    private int targetUtil = 56;
+    private int targetDept1 = 0;
+    private int targetDept2 = 0;
+    private int targetDept3 = 0;
+    private int targetCgpa1 = 0;
+    private int targetCgpa2 = 0;
+    private int targetCgpa3 = 0;
+    private int targetUtil = 0;
 
     private final Handler handler = new Handler();
     private int currentTick = 0;
@@ -66,7 +66,6 @@ public class AdminAnalyticsActivity extends AppCompatActivity {
         triggerRecalculationAnims();
     }
 
-    // Micro animation loader engine
     private void triggerRecalculationAnims() {
         Toast.makeText(this, "Compiling metrics logs...", Toast.LENGTH_SHORT).show();
 
@@ -79,7 +78,53 @@ public class AdminAnalyticsActivity extends AppCompatActivity {
         pbCgpa3.setProgress(0);
         pbUtilization.setProgress(0);
 
-        // Retrieve real server stats from MongoDB before compiling
+        AdminNetworkClient.get("/admin/students", new AdminNetworkClient.ApiCallback() {
+            @Override
+            public void onSuccess(String studentResponse) {
+                try {
+                    org.json.JSONArray students = new org.json.JSONArray(studentResponse);
+                    int total = students.length();
+                    int cgpaUnder7 = 0;
+                    int cgpa7To85 = 0;
+                    int cgpaOver85 = 0;
+                    for (int i = 0; i < total; i++) {
+                        org.json.JSONObject s = students.getJSONObject(i);
+                        double gpa = s.optDouble("cgpa", 0.0);
+                        if (gpa < 7.0) {
+                            cgpaUnder7++;
+                        } else if (gpa <= 8.5) {
+                            cgpa7To85++;
+                        } else {
+                            cgpaOver85++;
+                        }
+                    }
+                    if (total > 0) {
+                        targetCgpa1 = (cgpaUnder7 * 100) / total;
+                        targetCgpa2 = (cgpa7To85 * 100) / total;
+                        targetCgpa3 = (cgpaOver85 * 100) / total;
+                    } else {
+                        targetCgpa1 = 0;
+                        targetCgpa2 = 0;
+                        targetCgpa3 = 0;
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("AdminAnalytics", "Error parsing student list for CGPA stats", e);
+                }
+                fetchAnalyticsSummary();
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                android.util.Log.e("AdminAnalytics", "Failed to fetch student list for CGPA stats", e);
+                targetCgpa1 = 0;
+                targetCgpa2 = 0;
+                targetCgpa3 = 0;
+                fetchAnalyticsSummary();
+            }
+        });
+    }
+
+    private void fetchAnalyticsSummary() {
         AdminNetworkClient.get("/admin/analytics", new AdminNetworkClient.ApiCallback() {
             @Override
             public void onSuccess(String jsonResponse) {
@@ -92,14 +137,18 @@ public class AdminAnalyticsActivity extends AppCompatActivity {
                     if (deptStats != null) {
                         org.json.JSONObject stuPerDept = deptStats.optJSONObject("studentsPerDepartment");
                         if (stuPerDept != null) {
-                            double cs = stuPerDept.optDouble("Computer Science", 2.0);
-                            double it = stuPerDept.optDouble("Information Technology", 1.0);
-                            double elec = stuPerDept.optDouble("Electronics", 1.0);
-                            double total = cs + it + elec + stuPerDept.optDouble("B.Tech", 20.0);
+                            double cs = stuPerDept.optDouble("Computer Science", 0.0);
+                            double it = stuPerDept.optDouble("Information Technology", 0.0);
+                            double elec = stuPerDept.optDouble("Electronics", 0.0);
+                            double total = cs + it + elec;
                             if (total > 0) {
                                 targetDept1 = (int) ((cs / total) * 100);
                                 targetDept2 = (int) ((it / total) * 100);
                                 targetDept3 = (int) ((elec / total) * 100);
+                            } else {
+                                targetDept1 = 0;
+                                targetDept2 = 0;
+                                targetDept3 = 0;
                             }
                         }
                     }
@@ -107,11 +156,13 @@ public class AdminAnalyticsActivity extends AppCompatActivity {
                     // Parse dynamic overall slot utilization from userCounts
                     org.json.JSONObject userCounts = root.optJSONObject("userCounts");
                     if (userCounts != null) {
-                        double totalStudents = userCounts.optDouble("totalStudents", 26.0);
-                        double totalMentors = userCounts.optDouble("totalMentors", 16.0);
+                        double totalStudents = userCounts.optDouble("totalStudents", 0.0);
+                        double totalMentors = userCounts.optDouble("totalMentors", 0.0);
                         if (totalMentors > 0) {
                             targetUtil = (int) ((totalStudents / (totalMentors * 10.0)) * 100.0);
                             if (targetUtil > 100) targetUtil = 100;
+                        } else {
+                            targetUtil = 0;
                         }
                     }
                 } catch (Exception e) {
@@ -122,7 +173,12 @@ public class AdminAnalyticsActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Exception e) {
-                android.util.Log.w("AdminAnalytics", "Render API is offline. Operating on cached local data.", e);
+                android.util.Log.e("AdminAnalytics", "Failed to retrieve analytics data from server", e);
+                Toast.makeText(AdminAnalyticsActivity.this, "Failed to load database metrics", Toast.LENGTH_SHORT).show();
+                targetDept1 = 0;
+                targetDept2 = 0;
+                targetDept3 = 0;
+                targetUtil = 0;
                 startAnimationTicks();
             }
         });

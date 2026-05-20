@@ -77,15 +77,14 @@ public class AdminAnnouncementActivity extends AppCompatActivity {
             AdminNetworkClient.post("/notifications/admin/send", payload, new AdminNetworkClient.ApiCallback() {
                 @Override
                 public void onSuccess(String jsonResponse) {
-                    Toast.makeText(AdminAnnouncementActivity.this, "Broadcast published successfully to MongoDB!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AdminAnnouncementActivity.this, "Broadcast published successfully!", Toast.LENGTH_SHORT).show();
                     spawnAnnouncementCard(finalTitle, finalMessage, finalScope);
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    android.util.Log.w("AdminAnnouncement", "Offline sandbox broadcast alert spawned locally.", e);
-                    Toast.makeText(AdminAnnouncementActivity.this, "Broadcast alert '" + finalTitle + "' published successfully!", Toast.LENGTH_SHORT).show();
-                    spawnAnnouncementCard(finalTitle, finalMessage, finalScope);
+                    android.util.Log.e("AdminAnnouncement", "Failed to publish broadcast", e);
+                    Toast.makeText(AdminAnnouncementActivity.this, "Failed to publish broadcast: " + e.getMessage(), Toast.LENGTH_LONG).show();
                 }
             });
 

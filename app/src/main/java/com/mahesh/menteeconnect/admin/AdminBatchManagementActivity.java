@@ -91,19 +91,19 @@ public class AdminBatchManagementActivity extends AppCompatActivity {
                 public void onSuccess(String jsonResponse) {
                     try {
                         org.json.JSONObject obj = new org.json.JSONObject(jsonResponse);
-                        String createdId = obj.optString("id", "645a7b8" + System.currentTimeMillis());
+                        String createdId = obj.getString("id");
                         spawnBatchCard(createdId, name, year, dept, 0, "Unassigned");
-                        Toast.makeText(AdminBatchManagementActivity.this, "Cohort " + name + " synchronized with MongoDB!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(AdminBatchManagementActivity.this, "Cohort " + name + " created successfully!", Toast.LENGTH_SHORT).show();
                     } catch (Exception e) {
-                        spawnBatchCard("645a7b8" + System.currentTimeMillis(), name, year, dept, 0, "Unassigned");
+                        android.util.Log.e("AdminBatchManagement", "Failed to parse batch creation response", e);
+                        Toast.makeText(AdminBatchManagementActivity.this, "Error parsing server response", Toast.LENGTH_SHORT).show();
                     }
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    android.util.Log.w("AdminBatchManagement", "Offline sandbox mode cohort creation.", e);
-                    spawnBatchCard("645a7b8" + System.currentTimeMillis(), name, year, dept, 0, "Unassigned");
-                    Toast.makeText(AdminBatchManagementActivity.this, "Cohort " + name + " established successfully!", Toast.LENGTH_SHORT).show();
+                    android.util.Log.e("AdminBatchManagement", "Failed to create batch on server", e);
+                    Toast.makeText(AdminBatchManagementActivity.this, "Failed to create cohort: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -120,45 +120,45 @@ public class AdminBatchManagementActivity extends AppCompatActivity {
             public void onSuccess(String jsonResponse) {
                 try {
                     org.json.JSONArray array = new org.json.JSONArray(jsonResponse);
-                    if (array.length() > 0) {
-                        layoutBatchesList.removeAllViews(); // clear mock cards
-                        for (int i = 0; i < array.length(); i++) {
-                            org.json.JSONObject obj = array.getJSONObject(i);
-                            String id = obj.optString("id", "");
-                            String name = obj.optString("name", obj.optString("batchName", ""));
-                            String year = obj.optString("academicYear", "");
-                            if (year.isEmpty()) {
-                                String start = obj.optString("startDate", "");
-                                String end = obj.optString("endDate", "");
-                                if (!start.isEmpty()) {
-                                    year = start.substring(0, Math.min(start.length(), 4));
-                                    if (!end.isEmpty()) {
-                                        year += "-" + end.substring(0, Math.min(end.length(), 4));
-                                    }
+                    layoutBatchesList.removeAllViews(); // Clear any existing items/placeholders
+                    for (int i = 0; i < array.length(); i++) {
+                        org.json.JSONObject obj = array.getJSONObject(i);
+                        String id = obj.optString("id", "");
+                        String name = obj.optString("name", obj.optString("batchName", ""));
+                        String year = obj.optString("academicYear", "");
+                        if (year.isEmpty()) {
+                            String start = obj.optString("startDate", "");
+                            String end = obj.optString("endDate", "");
+                            if (!start.isEmpty()) {
+                                year = start.substring(0, Math.min(start.length(), 4));
+                                if (!end.isEmpty()) {
+                                    year += "-" + end.substring(0, Math.min(end.length(), 4));
                                 }
                             }
-                            String dept = obj.optString("department", obj.optString("course", ""));
-                            
-                            org.json.JSONArray students = obj.optJSONArray("studentsAssigned");
-                            int studentCount = (students != null) ? students.length() : 0;
-                            
-                            org.json.JSONArray mentors = obj.optJSONArray("mentorsAssigned");
-                            String mentorName = "Unassigned";
-                            if (mentors != null && mentors.length() > 0) {
-                                mentorName = "Assigned";
-                            }
-                            
-                            spawnBatchCard(id, name, year, dept, studentCount, mentorName);
                         }
+                        String dept = obj.optString("department", obj.optString("course", ""));
+                        
+                        org.json.JSONArray students = obj.optJSONArray("studentsAssigned");
+                        int studentCount = (students != null) ? students.length() : 0;
+                        
+                        org.json.JSONArray mentors = obj.optJSONArray("mentorsAssigned");
+                        String mentorName = "Unassigned";
+                        if (mentors != null && mentors.length() > 0) {
+                            mentorName = "Assigned";
+                        }
+                        
+                        spawnBatchCard(id, name, year, dept, studentCount, mentorName);
                     }
                 } catch (Exception e) {
                     android.util.Log.e("AdminBatchManagement", "Failed to parse batches list JSON", e);
+                    Toast.makeText(AdminBatchManagementActivity.this, "Error parsing batches data", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Exception e) {
-                android.util.Log.w("AdminBatchManagement", "Batch API is offline. Operating with mock database.", e);
+                android.util.Log.e("AdminBatchManagement", "Batch API connection failure", e);
+                Toast.makeText(AdminBatchManagementActivity.this, "Connection Error: Failed to fetch batches roster", Toast.LENGTH_SHORT).show();
             }
         });
     }

@@ -1,20 +1,28 @@
 package com.mahesh.menteeconnect.admin;
 
-import android.app.AlertDialog;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
+import android.provider.OpenableColumns;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.card.MaterialCardView;
 import com.mahesh.menteeconnect.R;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AdminBulkUploadActivity extends AppCompatActivity {
 
@@ -22,8 +30,8 @@ public class AdminBulkUploadActivity extends AppCompatActivity {
     private TextView tvFileName, tvConsoleLogs;
     private Button btnImport;
 
-    private final Handler handler = new Handler();
-    private int logStep = 0;
+    private Uri selectedFileUri;
+    private ActivityResultLauncher<String> filePickerLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,109 +57,223 @@ public class AdminBulkUploadActivity extends AppCompatActivity {
         tvConsoleLogs = findViewById(R.id.tv_console_logs);
         btnImport = findViewById(R.id.btn_import);
 
-        // Mock upload zone click
-        cardUploadZone.setOnClickListener(view -> triggerMockFileSelection());
+        // Initialize File Picker Launcher
+        filePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        selectedFileUri = uri;
+                        String fileName = getFileName(uri);
+                        tvFileName.setText(fileName);
+                        cardFileStatus.setVisibility(View.VISIBLE);
+                        tvConsoleLogs.setText("Console Active.\n[INFO] Selected CSV file target: " + fileName + "\nReady to parse and upload.\n");
+                        btnImport.setEnabled(true);
+                        Toast.makeText(AdminBulkUploadActivity.this, "Spreadsheet loaded successfully!", Toast.LENGTH_SHORT).show();
+                    }
+                }
+        );
+
+        // Upload zone click (Launches real system file picker)
+        cardUploadZone.setOnClickListener(view -> filePickerLauncher.launch("*/*"));
 
         // Import execute click
-        btnImport.setOnClickListener(view -> beginSimulatedImport());
+        btnImport.setOnClickListener(view -> beginRealImport());
     }
 
-    // Modal file selection popup
-    private void triggerMockFileSelection() {
-        String[] mockFiles = {
-                "student_mentee_seeding_2026.csv (14.2 KB)",
-                "mentors_roster_departments.csv (8.6 KB)",
-                "mentee_connect_demo_dataset.csv (32.1 KB)"
-        };
-
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-                .setTitle("Select CSV File Target")
-                .setItems(mockFiles, (dialog, index) -> {
-                    String selected = mockFiles[index];
-                    tvFileName.setText(selected);
-                    cardFileStatus.setVisibility(View.VISIBLE);
-
-                    tvConsoleLogs.setText("Console Active.\n[INFO] Selected CSV file target: " + selected.split(" \\(")[0] + "\nReady to parse and upload.\n");
-                    Toast.makeText(AdminBulkUploadActivity.this, "Spreadsheet matched successfully!", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+    private String getFileName(Uri uri) {
+        String result = null;
+        if ("content".equals(uri.getScheme())) {
+            try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (nameIndex != -1) {
+                        result = cursor.getString(nameIndex);
+                    }
+                }
+            } catch (Exception e) {
+                android.util.Log.e("AdminBulkUpload", "Error querying file name", e);
+            }
+        }
+        if (result == null) {
+            result = uri.getPath();
+            int cut = result.lastIndexOf('/');
+            if (cut != -1) {
+                result = result.substring(cut + 1);
+            }
+        }
+        return result;
     }
 
-    // Delayed console lines injection
-    private void beginSimulatedImport() {
+    private void beginRealImport() {
+        if (selectedFileUri == null) {
+            Toast.makeText(this, "No file selected", Toast.LENGTH_SHORT).show();
+            return;
+        }
         btnImport.setEnabled(false);
         cardUploadZone.setEnabled(false);
         tvConsoleLogs.append("\n[START] Parsing CSV stream nodes...\n");
 
-        logStep = 0;
-        runSeedingTicks();
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(selectedFileUri);
+            if (inputStream == null) {
+                tvConsoleLogs.append("[ERROR] Unable to open selected file.\n");
+                btnImport.setEnabled(true);
+                cardUploadZone.setEnabled(true);
+                return;
+            }
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            String headerLine = reader.readLine();
+            if (headerLine == null) {
+                tvConsoleLogs.append("[ERROR] Empty CSV file.\n");
+                reader.close();
+                inputStream.close();
+                btnImport.setEnabled(true);
+                cardUploadZone.setEnabled(true);
+                return;
+            }
+            tvConsoleLogs.append("[INFO] Fetching headers schema mapping... [" + headerLine + "]\n");
+
+            // Read all data rows
+            List<String[]> rows = new ArrayList<>();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+                // split by comma keeping quoted fields together
+                String[] tokens = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+                for (int i = 0; i < tokens.length; i++) {
+                    tokens[i] = tokens[i].trim().replaceAll("^\"|\"$", ""); // strip quotes
+                }
+                rows.add(tokens);
+            }
+            reader.close();
+            inputStream.close();
+
+            if (rows.isEmpty()) {
+                tvConsoleLogs.append("[ERROR] No data rows found in CSV.\n");
+                btnImport.setEnabled(true);
+                cardUploadZone.setEnabled(true);
+                return;
+            }
+
+            // Map headers to lower case for easier comparison
+            String[] headers = headerLine.split(",");
+            for (int i = 0; i < headers.length; i++) {
+                headers[i] = headers[i].trim().toLowerCase().replaceAll("^\"|\"$", "");
+            }
+
+            importRowsSequential(headers, rows, 0, 0);
+
+        } catch (Exception e) {
+            tvConsoleLogs.append("[ERROR] Failed to read CSV: " + e.getMessage() + "\n");
+            btnImport.setEnabled(true);
+            cardUploadZone.setEnabled(true);
+        }
     }
 
-    private void runSeedingTicks() {
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                switch (logStep) {
-                    case 0:
-                        tvConsoleLogs.append("[INFO] Fetching headers schema mapping... [firstName, lastName, email, course, semester, batch]\n");
-                        logStep++;
-                        runSeedingTicks();
-                        break;
-                    case 1:
-                        tvConsoleLogs.append("[INFO] Row 1: Parsing Mentee 'Sakshi Shinde'...\n");
-                        // Execute REST POST for Sakshi Shinde
-                        String pPayload = "{\"firstName\":\"Sakshi\",\"lastName\":\"Shinde\",\"email\":\"Sakshi@example.com\",\"department\":\"Computer Science\",\"academicYear\":\"2025-2026\"}";
-                        AdminNetworkClient.post("/admin/students", pPayload, new AdminNetworkClient.ApiCallback() {
-                            @Override
-                            public void onSuccess(String jsonResponse) {
-                                tvConsoleLogs.append("[SUCCESS] Row 1: 'Sakshi Shinde' written to MongoDB!\n");
-                            }
+    private void importRowsSequential(final String[] headers, final List<String[]> rows, final int index, final int successCount) {
+        if (index >= rows.size()) {
+            tvConsoleLogs.append("\n[SUCCESS] Seeding operations compiled successfully!\n");
+            Toast.makeText(AdminBulkUploadActivity.this, "Seeding complete! " + successCount + " of " + rows.size() + " records imported.", Toast.LENGTH_LONG).show();
+            btnImport.setEnabled(true);
+            cardUploadZone.setEnabled(true);
+            return;
+        }
 
-                            @Override
-                            public void onFailure(Exception e) {
-                                tvConsoleLogs.append("[INFO] Row 1: Parsed 'Sakshi Shinde' locally (Offline Mode).\n");
-                            }
-                        });
-                        logStep++;
-                        runSeedingTicks();
-                        break;
-                    case 2:
-                        tvConsoleLogs.append("[INFO] Row 2: Parsing Mentee 'Rohan Dev'...\n");
-                        // Execute REST POST for Rohan Dev
-                        String rPayload = "{\"firstName\":\"Rohan\",\"lastName\":\"Dev\",\"email\":\"rohan@example.com\",\"department\":\"Computer Science\",\"academicYear\":\"2025-2026\"}";
-                        AdminNetworkClient.post("/admin/students", rPayload, new AdminNetworkClient.ApiCallback() {
-                            @Override
-                            public void onSuccess(String jsonResponse) {
-                                tvConsoleLogs.append("[SUCCESS] Row 2: 'Rohan Dev' written to MongoDB!\n");
-                            }
+        String[] row = rows.get(index);
+        tvConsoleLogs.append("[INFO] Row " + (index + 1) + ": Parsing entry...\n");
 
-                            @Override
-                            public void onFailure(Exception e) {
-                                tvConsoleLogs.append("[INFO] Row 2: Parsed 'Rohan Dev' locally (Offline Mode).\n");
-                            }
-                        });
-                        logStep++;
-                        runSeedingTicks();
-                        break;
-                    case 3:
-                        tvConsoleLogs.append("[INFO] Hashing security credentials with BCrypt... Done.\n");
-                        logStep++;
-                        runSeedingTicks();
-                        break;
-                    case 4:
-                        tvConsoleLogs.append("[INFO] Syncing connections logic for cohort CS 2026... Done.\n");
-                        logStep++;
-                        runSeedingTicks();
-                        break;
-                    case 5:
-                        tvConsoleLogs.append("[SUCCESS] Seeding operations compiled successfully!\n[STATUS] MongoDB DBRef nodes mapped correctly.\n");
-                        Toast.makeText(AdminBulkUploadActivity.this, "Seeding complete! 2 records imported successfully.", Toast.LENGTH_LONG).show();
-                        btnImport.setEnabled(true);
-                        cardUploadZone.setEnabled(true);
-                        break;
+        org.json.JSONObject payload = new org.json.JSONObject();
+        try {
+            String firstName = "";
+            String lastName = "";
+            String email = "";
+            String username = "";
+            String password = "Password123";
+            String roll = "";
+            String course = "";
+            String batch = "";
+            int semester = 1;
+            String department = "";
+            double cgpa = 8.0;
+            double attendance = 75.0;
+            String phone = "";
+
+            for (int i = 0; i < headers.length; i++) {
+                if (i >= row.length) break;
+                String header = headers[i];
+                String val = row[i];
+                if (header.contains("first")) firstName = val;
+                else if (header.contains("last")) lastName = val;
+                else if (header.equals("email")) email = val;
+                else if (header.equals("username")) username = val;
+                else if (header.contains("password")) password = val;
+                else if (header.contains("roll") || header.contains("student")) roll = val;
+                else if (header.equals("course") || header.contains("branch")) course = val;
+                else if (header.equals("batch") || header.contains("year")) batch = val;
+                else if (header.equals("semester")) {
+                    try { semester = Integer.parseInt(val); } catch (Exception ignored) {}
                 }
+                else if (header.equals("department") || header.equals("dept")) department = val;
+                else if (header.equals("cgpa")) {
+                    try { cgpa = Double.parseDouble(val); } catch (Exception ignored) {}
+                }
+                else if (header.equals("attendance")) {
+                    try { attendance = Double.parseDouble(val); } catch (Exception ignored) {}
+                }
+                else if (header.contains("phone")) phone = val;
             }
-        }, 1000); // 1-second delay increments
+
+            if (username.isEmpty()) {
+                username = email.isEmpty() ? "user_" + System.currentTimeMillis() : (email.contains("@") ? email.split("@")[0] : email);
+            }
+            if (email.isEmpty()) {
+                email = username + "@example.com";
+            }
+            if (firstName.isEmpty() && lastName.isEmpty()) {
+                firstName = username;
+            }
+            if (roll.isEmpty()) {
+                roll = "STU" + (1000 + index);
+            }
+
+            payload.put("firstName", firstName);
+            payload.put("lastName", lastName);
+            payload.put("email", email);
+            payload.put("username", username);
+            payload.put("password", password);
+            payload.put("studentId", roll);
+            payload.put("rollNumber", roll);
+            payload.put("course", course);
+            payload.put("batch", batch);
+            payload.put("academicYear", batch);
+            payload.put("semester", semester);
+            payload.put("department", department.isEmpty() ? course : department);
+            payload.put("cgpa", cgpa);
+            payload.put("attendance", attendance);
+            payload.put("phoneNumber", phone);
+            payload.put("role", "ROLE_STUDENT");
+
+            tvConsoleLogs.append("       Parsed: " + firstName + " " + lastName + " (" + email + ")\n");
+
+        } catch (Exception e) {
+            tvConsoleLogs.append("       [ERROR] Parse failed: " + e.getMessage() + "\n");
+            importRowsSequential(headers, rows, index + 1, successCount);
+            return;
+        }
+
+        final String entryName = payload.optString("firstName") + " " + payload.optString("lastName");
+        AdminNetworkClient.post("/admin/students", payload.toString(), new AdminNetworkClient.ApiCallback() {
+            @Override
+            public void onSuccess(String jsonResponse) {
+                tvConsoleLogs.append("       [SUCCESS] Row " + (index + 1) + ": '" + entryName + "' written to MongoDB!\n");
+                importRowsSequential(headers, rows, index + 1, successCount + 1);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                tvConsoleLogs.append("       [ERROR] Row " + (index + 1) + ": '" + entryName + "' upload failed: " + e.getMessage() + "\n");
+                importRowsSequential(headers, rows, index + 1, successCount);
+            }
+        });
     }
 }

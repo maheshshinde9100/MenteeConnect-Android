@@ -18,7 +18,6 @@ import java.util.Random;
 public class AdminDashboardActivity extends AppCompatActivity {
 
     private TextView tvTotalUsers, tvActiveMentors, tvTotalStudents, tvActiveSessions;
-    private final Random random = new Random();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,10 +107,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     org.json.JSONObject root = new org.json.JSONObject(jsonResponse);
                     org.json.JSONObject counts = root.optJSONObject("userCounts");
                     if (counts != null) {
-                        int users = counts.optInt("totalUsers", 125);
-                        int mentors = counts.optInt("totalMentors", 15);
-                        int students = counts.optInt("totalStudents", 108);
-                        int active = counts.optInt("activeUsers", 95);
+                        int users = counts.optInt("totalUsers", 0);
+                        int mentors = counts.optInt("totalMentors", 0);
+                        int students = counts.optInt("totalStudents", 0);
+                        int active = counts.optInt("activeUsers", 0);
 
                         tvTotalUsers.setText(String.valueOf(users));
                         tvActiveMentors.setText(String.valueOf(mentors));
@@ -124,28 +123,15 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     }
                 } catch (Exception e) {
                     android.util.Log.e("AdminDashboard", "Failed to parse analytics JSON", e);
-                    triggerMockFallback();
+                    Toast.makeText(AdminDashboardActivity.this, "Error parsing server analytics", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Exception e) {
-                android.util.Log.w("AdminDashboard", "Render API is offline. Using local session data.", e);
-                triggerMockFallback();
+                android.util.Log.e("AdminDashboard", "Failed to fetch analytics from backend API", e);
+                Toast.makeText(AdminDashboardActivity.this, "Connection Error: Failed to synchronize dashboard statistics", Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    private void triggerMockFallback() {
-        // Simulate dynamic data changes on refresh
-        int users = 120 + random.nextInt(15);
-        int mentors = 12 + random.nextInt(5);
-        int students = 90 + random.nextInt(25);
-        int active = 80 + random.nextInt(20);
-
-        tvTotalUsers.setText(String.valueOf(users));
-        tvActiveMentors.setText(String.valueOf(mentors));
-        tvTotalStudents.setText(String.valueOf(students));
-        tvActiveSessions.setText(String.valueOf(active));
     }
 }
